@@ -18,10 +18,10 @@ class DC_motor_controller{
     void setEncoderPin(uint8_t pinA, uint8_t pinB);		// Pinos do encoder do motor
     
     // Set technical features:
-    void setRefreshTime(unsigned long t);				// Refresh time for wakl ans gyrate
-    void setPPR(uint16_t ppr);							// Pulses per revolution
+    void setRefreshTime(unsigned long t);				// Refresh time for wakl and gyrate, default is 50, but you can change it with this function
+    void setPPR(uint16_t ppr);							// Pulses per revolution, default is 11, but you can change it with this function.
     void setRR(float rr);								// Rotation ratio
-    void setPIDconstants(float kp, float ki, float kd);	// PID constants (KP, Ki and KD)
+    void setPIDconstants(float kp, float ki, float kd);	// PID constants (KP, Ki and KD), para mudar os valores das constantes do PID conforme a necessidade
     
     // Setting pins:
     void setPins();	// Configura os pinos usados pelo programa
@@ -41,11 +41,11 @@ class DC_motor_controller{
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
 
-  //private:
-    unsigned long lastTime = 0, deltaTime, refreshTime;
+  private:
+    unsigned long lastTime = 0, deltaTime, refreshTime=50;
     uint8_t encoderPinA, encoderPinB;
-    float ppr, rr, rpm;
-    float kp, ki, kd, P=0, I=0, D=0, pid;
+    float ppr=11, rr, rpm;
+    float kp=1.8, ki=1, kd=0.15, P=0, I=0, D=0, pid;	// Valores padrão para as constantes do PID;
     int pwm=0;
     float error, lastError = 0;
     int computePID(float input, float sp, bool derivative);

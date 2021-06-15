@@ -160,7 +160,7 @@ void DC_motor_controller::walk(float sp, float rot=0){
 
 void DC_motor_controller::resetForGyrate(){
   deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=0; lastTime=millis(); rpm=0; deltaTime=0;
-  can_run=true; pulses[0] = 0;
+  can_run=true; pulses[0] = 0; // Reset the pulses for the PWM counter
 }
 
 bool DC_motor_controller::canRun(){
