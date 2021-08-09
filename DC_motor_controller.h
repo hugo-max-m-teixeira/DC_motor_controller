@@ -38,6 +38,7 @@ class DC_motor_controller{
     void resetPID();
     bool canRun();
     void resetForGyrate();
+    int getPWM(); // Retorna o PWm aplicado aos motores
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
 

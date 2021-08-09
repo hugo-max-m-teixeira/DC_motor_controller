@@ -83,6 +83,10 @@ float DC_motor_controller::getRPM(){
   return rpm;
 }
 
+int getPWM(){
+	return pwm;
+}
+
 void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
   this->kp = kp;
   this->ki = ki;
