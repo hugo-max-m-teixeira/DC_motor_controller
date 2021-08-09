@@ -83,7 +83,7 @@ float DC_motor_controller::getRPM(){
   return rpm;
 }
 
-int getPWM(){
+int DC_motor_controller::getPWM(){
 	return pwm;
 }
 
