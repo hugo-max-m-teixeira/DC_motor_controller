@@ -53,7 +53,8 @@ class DC_motor_controller{
     int computeAll(float sp);
     uint8_t in1, in2, en;
     bool can_run=false;
-    uint16_t deltaT=0, lastT, Pulses=0; // Controle de tempo e pulsos do métodp gyrate
+    uint16_t deltaT=0, lastT; // Controle de tempo e pulsos do métodp gyrate
+    long Pulses=0;
   
 };
 
