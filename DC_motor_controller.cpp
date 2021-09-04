@@ -1,9 +1,9 @@
 /*
 	Autor: Hugo Max M. Teixeira
 	Data: 05/2021
-	
+
 	Elsta biblioteca tem por objetivo realizar o controle com maior precisão de motores com sensor encoder;
-	
+
 */
 
 #include <DC_motor_controller.h>
@@ -70,9 +70,13 @@ void DC_motor_controller::setRR(float rr){
   this->rr = rr;
 }
 
+void DC_motor_controller::setMaxI(int max){
+    this->maxI = max;
+}
+
 void DC_motor_controller::computeRPM(){
   deltaTime = millis() - lastTime;
-  
+
   if(deltaTime >= refreshTime){
     rpm = (pulses[0] * (60000.0 / (ppr * rr))) / deltaTime;
     pulses[0] = 0;
@@ -95,26 +99,32 @@ void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
 
 int DC_motor_controller::computePID(float input, float sp, bool derivative){ // Compute and return the PID value.
   error = sp - input;                                   // Calcula o erro
-  
+
   P = error * kp;                                       // Calcula a proporcional
   I += error * ki * (deltaTime / 1000.0);               // Calcula a integral
   derivative ? D = (error - lastError) * kd / (deltaTime / 1000.0) : D=0;
-  
-  
+
+
   pid = P + I + D;                                      // pid receba a soma de P, I e D
-  
+  applyIntegralLimit();
+
   lastError = error;                                    // Erro anterior = erro atual
-  
+
   return pid;                                           // Retorna o valor do pid
 }
 
+void DC_motor_controller::applyIntegralLimit(){
+    if(I > maxI) I=maxI;
+    if(I < -maxI) I=-maxI;
+}
+
 int DC_motor_controller::computeAll(float sp){
-  deltaTime = millis() - lastTime;  // Tempo decorrido  
-             
+  deltaTime = millis() - lastTime;  // Tempo decorrido
+
   if(deltaTime >= refreshTime){     // Se o tempo deccorrido for maior ou igual ao tempo de refresh...
-    cli();                          // Desativa todas as interrupções para o cálculo  
+    cli();                          // Desativa todas as interrupções para o cálculo
     computeRPM();                   // Calcula a velocidade
-    pwm = computePID(rpm, sp, false);      // Calcula o valor do PID tendo como entrada a velocidade(rpm) 
+    pwm = computePID(rpm, sp, false);      // Calcula o valor do PID tendo como entrada a velocidade(rpm)
                                     // e o set point(sp)
     lastTime = millis();            // Atualiza o tempo
     sei();                          // Reativa todas as interrupções durante o cálculo
@@ -128,17 +138,17 @@ void DC_motor_controller::walk(float sp, float rot=0){
     if(sp==0){
       run(0);
     }else{
-      run(computeAll(sp)); 
+      run(computeAll(sp));
     }
   } else {
     long totalPulses=rot*ppr*rr;
     resetForGyrate();
     lastTime=millis();
-    
+
     while(can_run_local){
       deltaTime = millis() - lastTime;        // Calcula o tempo decorrido desde a última execução
       if(deltaTime >= refreshTime){           // Se o tempo decorrido for maior ou igual ao tempo de refresh...
-        cli();                                // Desativa todas as interrupções para o cálculo; 
+        cli();                                // Desativa todas as interrupções para o cálculo;
         deltaT=millis()-lastT;                // Calcula o tempo decorrido (para determinar o número de pulsos)
         Pulses=(deltaT*sp*ppr*rr)/60000.0;    // Calcula a quantidade necessária da pulsos, de acordo com o tempo
         if(rot > 0)  pwm = computePID(pulses[1],Pulses, true);   // Calcula o PID, de acordo com o número real de pulsos e a quantidade calculada
@@ -158,7 +168,7 @@ void DC_motor_controller::walk(float sp, float rot=0){
     while((millis() - lastT) <=200){
       deltaTime = millis() - lastTime;   // De acordo como tempo
       if(deltaTime >= refreshTime){
-        cli(); // Desativa todas as interrupções durante o cálculo; 
+        cli(); // Desativa todas as interrupções durante o cálculo;
         pwm = computePID(pulses[1]*2.0,0, true);
         lastTime = millis();
         sei(); // Reativa todas as interrupções
@@ -175,14 +185,14 @@ void DC_motor_controller::resetForGyrate(){
 }
 
 bool DC_motor_controller::canRun(){
-  return can_run; 
+  return can_run;
 }
 
 void DC_motor_controller::gyrate(float sp, float rot){
   long totalPulses=rot*ppr*rr;
   deltaTime = millis() - lastTime;   // De acordo como tempo
   if(deltaTime >= refreshTime){
-    cli(); // Desativa todas as interrupções durante o cálculo; 
+    cli(); // Desativa todas as interrupções durante o cálculo;
     deltaT=millis()-lastT; // Calcula o tempo decorrido
     Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
     if(rot>0){
@@ -190,7 +200,7 @@ void DC_motor_controller::gyrate(float sp, float rot){
     } else {
       pwm = computePID(-pulses[1],-Pulses,true);
     }
-    
+
     lastTime = millis();
     sei(); // Reativa todas as interrupções
   }
