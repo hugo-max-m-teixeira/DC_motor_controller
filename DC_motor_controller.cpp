@@ -181,7 +181,8 @@ void DC_motor_controller::walk(float sp, float rot=0){
 
 void DC_motor_controller::resetForGyrate(){
   deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=0; lastTime=millis(); rpm=0; deltaTime=0;
-  can_run=true; pulses[0] = 0; // Reset the pulses for the PWM counter
+  can_run=true; pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
+  run(0);
 }
 
 bool DC_motor_controller::canRun(){
@@ -189,25 +190,29 @@ bool DC_motor_controller::canRun(){
 }
 
 void DC_motor_controller::gyrate(float sp, float rot){
-  long totalPulses=rot*ppr*rr;
-  deltaTime = millis() - lastTime;   // De acordo como tempo
-  if(deltaTime >= refreshTime){
-    cli(); // Desativa todas as interrupções durante o cálculo;
-    deltaT=millis()-lastT; // Calcula o tempo decorrido
-    Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
-    if(rot>0){
-      pwm = computePID(pulses[1],Pulses,true);
+    if(rot == 0){
+        walk(sp);
     } else {
-      pwm = computePID(-pulses[1],-Pulses,true);
-    }
+        long totalPulses=rot*ppr*rr;
+        deltaTime = millis() - lastTime;   // De acordo como tempo
+        if(deltaTime >= refreshTime){
+        cli(); // Desativa todas as interrupções durante o cálculo;
+        deltaT=millis()-lastT; // Calcula o tempo decorrido
+        Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
+        if(rot>0){
+          pwm = computePID(pulses[1],Pulses,true);
+        } else {
+          pwm = computePID(-pulses[1],-Pulses,true);
+        }
 
-    lastTime = millis();
-    sei(); // Reativa todas as interrupções
-  }
-  run((rot>0) ? pwm : -pwm);
-  if(rot>0){
-    can_run = (pulses[1] < totalPulses)? true : false;
-  }else{
-    can_run = (pulses[1] > totalPulses)? true : false;
-  }
+        lastTime = millis();
+        sei(); // Reativa todas as interrupções
+        }
+        run((rot>0) ? pwm : -pwm);
+        if(rot>0){
+        can_run = (pulses[1] < totalPulses)? true : false;
+        }else{
+        can_run = (pulses[1] > totalPulses)? true : false;
+        }
+    }
 }
