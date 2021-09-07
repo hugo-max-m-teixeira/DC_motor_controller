@@ -104,9 +104,8 @@ int DC_motor_controller::computePID(float input, float sp, bool derivative){ // 
   I += error * ki * (deltaTime / 1000.0);               // Calcula a integral
   derivative ? D = (error - lastError) * kd / (deltaTime / 1000.0) : D=0;
 
-
-  pid = P + I + D;                                      // pid receba a soma de P, I e D
   applyIntegralLimit();
+  pid = P + I + D;                                      // pid receba a soma de P, I e D
 
   lastError = error;                                    // Erro anterior = erro atual
 
@@ -133,7 +132,7 @@ int DC_motor_controller::computeAll(float sp){
 }
 
 void DC_motor_controller::walk(float sp, float rot=0){
-	bool can_run_local = true;
+  bool can_run_local = true;
   if(rot == 0){
     if(sp==0){
       run(0);
@@ -189,30 +188,31 @@ bool DC_motor_controller::canRun(){
   return can_run;
 }
 
-void DC_motor_controller::gyrate(float sp, float rot){
+void DC_motor_controller::gyrate(float sp, float rot=0){
     if(rot == 0){
-        walk(sp);
+        walk(sp, 0);
+        can_run = false;
     } else {
         long totalPulses=rot*ppr*rr;
         deltaTime = millis() - lastTime;   // De acordo como tempo
         if(deltaTime >= refreshTime){
-        cli(); // Desativa todas as interrupções durante o cálculo;
-        deltaT=millis()-lastT; // Calcula o tempo decorrido
-        Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
-        if(rot>0){
-          pwm = computePID(pulses[1],Pulses,true);
-        } else {
-          pwm = computePID(-pulses[1],-Pulses,true);
-        }
+            cli(); // Desativa todas as interrupções durante o cálculo;
+            deltaT=millis()-lastT; // Calcula o tempo decorrido
+            Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
+            if(rot>0){
+                pwm = computePID(pulses[1],Pulses,true);
+            } else {
+                pwm = computePID(-pulses[1],-Pulses,true);
+            }
 
-        lastTime = millis();
-        sei(); // Reativa todas as interrupções
+            lastTime = millis();
+            sei(); // Reativa todas as interrupções
         }
         run((rot>0) ? pwm : -pwm);
         if(rot>0){
-        can_run = (pulses[1] < totalPulses)? true : false;
+            can_run = (pulses[1] < totalPulses)? true : false;
         }else{
-        can_run = (pulses[1] > totalPulses)? true : false;
+            can_run = (pulses[1] > totalPulses)? true : false;
         }
     }
 }
