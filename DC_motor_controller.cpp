@@ -102,7 +102,7 @@ int DC_motor_controller::computePID(float input, float sp, bool derivative){ // 
 
   P = error * kp;                                       // Calcula a proporcional
   I += error * ki * (deltaTime / 1000.0);               // Calcula a integral
-  derivative ? D = (lastError - error) * kd / (deltaTime / 1000.0) : D=0;
+  derivative ? D = (error - lastError) * kd / (deltaTime / 1000.0) : D=0;
 
   applyIntegralLimit();
   pid = P + I + D;                                      // pid receba a soma de P, I e D
@@ -118,17 +118,17 @@ void DC_motor_controller::applyIntegralLimit(){
 }
 
 int DC_motor_controller::computeAll(float sp){
-  deltaTime = millis() - lastTime;  // Tempo decorrido
+  deltaTime = millis() - lastTime;      // Tempo decorrido
 
-  if(deltaTime >= refreshTime){     // Se o tempo deccorrido for maior ou igual ao tempo de refresh...
-    cli();                          // Desativa todas as interrupções para o cálculo
-    computeRPM();                   // Calcula a velocidade
-    pwm = computePID(rpm, sp, false);      // Calcula o valor do PID tendo como entrada a velocidade(rpm)
-                                    // e o set point(sp)
-    lastTime = millis();            // Atualiza o tempo
-    sei();                          // Reativa todas as interrupções durante o cálculo
+  if(deltaTime >= refreshTime){         // Se o tempo deccorrido for maior ou igual ao tempo de refresh...
+    cli();                              // Desativa todas as interrupções para o cálculo
+    computeRPM();                       // Calcula a velocidade
+    pwm = computePID(rpm, sp, false);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
+                                        // e o set point(sp)
+    lastTime = millis();                // Atualiza o tempo
+    sei();                              // Reativa todas as interrupções durante o cálculo
   }
-  return pwm;                       // Retorna o valor do pwm (o mesmo do pid)
+  return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
 }
 
 void DC_motor_controller::walk(float sp){
@@ -159,7 +159,7 @@ void DC_motor_controller::walk(float sp, float rot){
         deltaT=millis()-lastT;                // Calcula o tempo decorrido (para determinar o número de pulsos)
         Pulses=(deltaT*sp*ppr*rr)/60000.0;    // Calcula a quantidade necessária da pulsos, de acordo com o tempo
         if(rot > 0)  pwm = computePID(pulses[1],Pulses, true);   // Calcula o PID, de acordo com o número real de pulsos e a quantidade calculada
-        if(rot < 0)  pwm = computePID(-pulses[1],-Pulses, true); // Calcula o PID, de acordo com o número real de pulsos e a quantidade calculada
+        else         pwm = computePID(-pulses[1],-Pulses, true); // Calcula o PID, de acordo com o número real de pulsos e a quantidade calculada
         lastTime = millis();                  // Atualiza o tempo, quando ocorreu essa execução
         sei();                                // Reativa todas as interrupções
       }
@@ -172,10 +172,10 @@ void DC_motor_controller::walk(float sp, float rot){
     }
     lastT=millis();
     pulses[1]=0;
-    while((millis() - lastT) <=200){
-      deltaTime = millis() - lastTime;   // De acordo como tempo
+    while((millis() - lastT) <=200){        //Stop!
+      deltaTime = millis() - lastTime;      // De acordo como tempo
       if(deltaTime >= refreshTime){
-        cli(); // Desativa todas as interrupções durante o cálculo;
+        cli();                              // Desativa todas as interrupções durante o cálculo;
         pwm = computePID(pulses[1]*2.0,0, true);
         lastTime = millis();
         sei(); // Reativa todas as interrupções
@@ -187,7 +187,7 @@ void DC_motor_controller::walk(float sp, float rot){
 }
 
 void DC_motor_controller::resetForGyrate(){
-  deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=0; lastTime=millis(); rpm=0; deltaTime=0;
+  deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=error; lastTime=millis(); rpm=0; deltaTime=0;
   can_run=true; pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
   run(0);
 }
@@ -207,12 +207,8 @@ void DC_motor_controller::gyrate(float sp, float rot=0){
             cli(); // Desativa todas as interrupções durante o cálculo;
             deltaT=millis()-lastT; // Calcula o tempo decorrido
             Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
-            if(rot>0){
-                pwm = computePID(pulses[1],Pulses,true);
-            } else {
-                pwm = computePID(-pulses[1],-Pulses,true);
-            }
-
+            if(rot>0)   pwm = computePID(pulses[1],Pulses,true);
+            else        pwm = computePID(-pulses[1],-Pulses,true);
             lastTime = millis();
             sei(); // Reativa todas as interrupções
         }

@@ -44,7 +44,7 @@ class DC_motor_controller{
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
 
-private:
+//private:
     int maxI = 200;
     void applyIntegralLimit();
     unsigned long lastTime = 0, deltaTime, refreshTime=50;
