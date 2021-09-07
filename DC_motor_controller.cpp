@@ -102,7 +102,7 @@ int DC_motor_controller::computePID(float input, float sp, bool derivative){ // 
 
   P = error * kp;                                       // Calcula a proporcional
   I += error * ki * (deltaTime / 1000.0);               // Calcula a integral
-  derivative ? D = (error - lastError) * kd / (deltaTime / 1000.0) : D=0;
+  derivative ? D = (lastError - error) * kd / (deltaTime / 1000.0) : D=0;
 
   applyIntegralLimit();
   pid = P + I + D;                                      // pid receba a soma de P, I e D
@@ -131,7 +131,15 @@ int DC_motor_controller::computeAll(float sp){
   return pwm;                       // Retorna o valor do pwm (o mesmo do pid)
 }
 
-void DC_motor_controller::walk(float sp, float rot=0){
+void DC_motor_controller::walk(float sp){
+    if(sp==0){
+      run(0);
+    }else{
+      run(computeAll(sp));
+    }
+}
+
+void DC_motor_controller::walk(float sp, float rot){
   bool can_run_local = true;
   if(rot == 0){
     if(sp==0){
