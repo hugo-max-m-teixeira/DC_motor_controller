@@ -220,3 +220,26 @@ void DC_motor_controller::gyrate(float sp, float rot=0){
         }
     }
 }
+
+void DC_motor_controller::stop(){
+	resetForGyrate();
+	deltaTime = millis() - lastTime;     		// Tempo decorrido
+	float last_pulses_values[3] = {10, 10, 10}; // Default values
+	byte i=0;
+
+	while(((millis() - lastT) <=250) && last_pulses_values[0]!=0 && last_pulses_values[1]!=0 && last_pulses_values[2]!=0){        	//Stop!
+      deltaTime = millis() - lastTime;      	// De acordo como tempo
+      if(deltaTime >= refreshTime){
+        cli();                              	// Desativa todas as interrupções durante o cálculo;
+        pwm = computePID(pulses[1]*2.0,0, true);
+        lastTime = millis();
+        if(i > 2) i=0;
+        last_pulses_values[i] = pulses[1];
+        i++;
+        sei(); // Reativa todas as interrupções
+        delay(50);
+      }
+      run(pwm);
+    }
+    run(0);
+}

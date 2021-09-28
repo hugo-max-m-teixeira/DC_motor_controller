@@ -28,10 +28,11 @@ class DC_motor_controller{
     void setPins();	// Configura os pinos usados pelo programa
 
     // Actions:
-    void run(int pwm);					// Apply a simple pwm on the motor
+    void run(int pwm);					// Apply a simple pwm over the motor
     void walk(float sp);
-    void walk(float sp, float rot);	// Motor simple walk - For only one motor and it uses While
+    void walk(float sp, float rot);		// Motor simple walk - For only one motor and it uses While
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
+    void stop(); 						// Stops the motor
 
     // Others...
     void isr();
