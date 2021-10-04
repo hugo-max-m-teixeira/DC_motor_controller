@@ -32,7 +32,8 @@ class DC_motor_controller{
     void walk(float sp);
     void walk(float sp, float rot);	// Motor simple walk - For only one motor and it uses While
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
-    void stop();
+    void stop(unsigned int t=200);
+    void stop_both(unsigned int t=200);
 
     // Others...
     void isr();
@@ -42,7 +43,8 @@ class DC_motor_controller{
     bool canRun();
     bool canStop();
     void resetForGyrate();
-    int getPWM(); // Retorna o PWm aplicado aos motores
+    int getPWM(); // Retorna o PWM aplicado aos motores
+    unsigned int getRefreshTime();
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
 
@@ -58,7 +60,7 @@ class DC_motor_controller{
     int computePID(float input, float sp, bool derivative);
     int computeAll(float sp);
     uint8_t in1, in2, en;
-    bool can_run=false, can_stop=false;
+    bool can_run=false;
     uint16_t deltaT=0, lastT; // Controle de tempo e pulsos do métodp gyrate
     long Pulses=0;
 

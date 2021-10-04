@@ -91,6 +91,10 @@ int DC_motor_controller::getPWM(){
 	return pwm;
 }
 
+unsigned int DC_motor_controller::getRefreshTime(){
+  return refreshTime;
+}
+
 void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
   this->kp = kp;
   this->ki = ki;
@@ -196,10 +200,6 @@ bool DC_motor_controller::canRun(){
   return can_run;
 }
 
-bool DC_motor_controller::canStop(){
-	return can_stop;
-}
-
 void DC_motor_controller::gyrate(float sp, float rot=0){
     if(rot == 0){
         walk(sp, 0);
@@ -218,27 +218,34 @@ void DC_motor_controller::gyrate(float sp, float rot=0){
         }
         run((rot>0) ? pwm : -pwm);
         if(rot>0){
-        	if (pulses[1] < totalPulses){
-        		can_run=true;
-        		can_stop=true;
-        	} else {
-        		can_stop=true;
-        		can_run=false;
-        	}
-        	
-            //can_run = (pulses[1] < totalPulses)? true : false;
+        	can_run = (pulses[1] < totalPulses)? true : false;
         }else{
             can_run = (pulses[1] > totalPulses)? true : false;
         }
     }
 }
-void DC_motor_controller::stop(){
-	deltaTime=millis() - lastTime;
-	if(deltaTime >= refreshTime){
-		cli();                              // Desativa todas as interrupções durante o cálculo;
-		pwm = computePID(pulses[1]*2.5,0, true);
-		lastTime = millis();
-		sei(); // Reativa todas as interrupções
-	}
-	run(pwm);
+void DC_motor_controller::stop(unsigned int t=200){
+  unsigned int lastT_local = millis();
+  while((millis() - lastT_local) < t){     // For the time "t"...
+    deltaTime=millis() - lastTime;
+    if(deltaTime >= refreshTime){         // If it's time to compute...
+      cli();                              // Desativa todas as interrupções durante o cálculo;
+      pwm = computePID(pulses[1]*2.5,0, true);
+      lastTime = millis();                // Update lastTime
+      sei();                              // Reativa todas as interrupções
+    }
+    run(pwm);
+  }
+  run(0); // Turn off the motor
+}
+
+void DC_motor_controller::stop_both(unsigned int t=200){
+  deltaTime=millis() - lastTime;
+  if(deltaTime >= refreshTime){         // If it's time to compute...
+    cli();                              // Desativa todas as interrupções durante o cálculo;
+    pwm = computePID(pulses[1]*2.5,0, true);
+    lastTime = millis();                // Update lastTime
+    sei();                              // Reativa todas as interrupções
+  }
+  run(pwm);
 }
