@@ -8,6 +8,17 @@
 
 #include <DC_motor_controller.h>
 
+// cria uma outra classe (ponteiro)
+DC_motor_controller *pointer_motor;
+
+static void motor_interrupt (){
+	pointer_motor->isr();
+}
+/*
+void DC_motor_controller::setInterrupt(){
+	//attachInterrupt(digitalPinToInterrupt(encoderPinA), interrupt, FALLING);
+}*/
+
 void DC_motor_controller::hBridge(uint8_t in1, uint8_t in2, uint8_t en){
   this-> in1 = in1;
   this-> in2 = in2;
@@ -20,6 +31,7 @@ void DC_motor_controller::setPins(){
   pinMode(en, OUTPUT);
   pinMode(encoderPinA, INPUT);
   pinMode(encoderPinB, INPUT);
+  attachInterrupt(digitalPinToInterrupt(encoderPinA), motor_interrupt, FALLING);
 }
 
 void DC_motor_controller::run(int pwm){

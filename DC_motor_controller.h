@@ -34,6 +34,7 @@ class DC_motor_controller{
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
     void stop(unsigned int t=200);
     void stop_both(unsigned int t=200);
+    //void setInterrupt();
 
     // Others...
     void isr();
