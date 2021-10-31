@@ -230,7 +230,7 @@ void DC_motor_controller::stop(unsigned int t=200){
     deltaTime=millis() - lastTime;
     if(deltaTime >= refreshTime){         // If it's time to compute...
       cli();                              // Desativa todas as interrupções durante o cálculo;
-      pwm = computePID(pulses[1]*2.5,0, true);
+      pwm = computePID(pulses[1]*1.5,0, true);
       lastTime = millis();                // Update lastTime
       sei();                              // Reativa todas as interrupções
     }
@@ -243,7 +243,7 @@ void DC_motor_controller::stop_both(unsigned int t=200){
   deltaTime=millis() - lastTime;
   if(deltaTime >= refreshTime){         // If it's time to compute...
     cli();                              // Desativa todas as interrupções durante o cálculo;
-    pwm = computePID(pulses[1]*2.5,0, true);
+    pwm = computePID(pulses[1]*1.5,0, true);
     lastTime = millis();                // Update lastTime
     sei();                              // Reativa todas as interrupções
   }
