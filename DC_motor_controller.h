@@ -32,15 +32,15 @@ class DC_motor_controller{
     void walk(float sp);
     void walk(float sp, float rot);	// Motor simple walk - For only one motor and it uses While
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
-    void stop(unsigned int t=200);
-    void stop_both(unsigned int t=200);
+    void stop(unsigned int t=0, int vel=0);
+    void stop_both(int vel=0);
     //void setInterrupt();
 
     // Others...
     void isr();
     void computeRPM();
     float getRPM();
-    void resetPID();
+    void reset();
     bool canRun();
     bool canStop();
     void resetForGyrate();

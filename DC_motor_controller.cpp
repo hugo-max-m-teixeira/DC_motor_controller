@@ -188,7 +188,7 @@ void DC_motor_controller::walk(float sp, float rot){
     }
     lastT=millis();
     pulses[1]=0;
-    while((millis() - lastT) <=200){        //Stop!
+    while((millis() - lastT) <=100){        //Stop!
       deltaTime = millis() - lastTime;      // De acordo como tempo
       if(deltaTime >= refreshTime){
         cli();                              // Desativa todas as interrupções durante o cálculo;
@@ -206,6 +206,10 @@ void DC_motor_controller::resetForGyrate(){
   deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=error; lastTime=millis(); rpm=0; deltaTime=0;
   can_run=true; pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
   run(0);
+}
+
+void DC_motor_controller::reset(){
+	resetForGyrate();
 }
 
 bool DC_motor_controller::canRun(){
@@ -236,22 +240,24 @@ void DC_motor_controller::gyrate(float sp, float rot=0){
         }
     }
 }
-void DC_motor_controller::stop(unsigned int t=200){
+void DC_motor_controller::stop(unsigned int t=0, int vel=0){
+  t = (vel == 0) ? 100 : (vel*2); 				// If vel is 0, t is 100. If so, t change to vel*2
   unsigned int lastT_local = millis();
-  while((millis() - lastT_local) < t){     // For the time "t"...
-    deltaTime=millis() - lastTime;
-    if(deltaTime >= refreshTime){         // If it's time to compute...
-      cli();                              // Desativa todas as interrupções durante o cálculo;
-      pwm = computePID(pulses[1]*1.5,0, true);
-      lastTime = millis();                // Update lastTime
-      sei();                              // Reativa todas as interrupções
-    }
-    run(pwm);
+  while((millis() - lastT_local) < t){     		// For the time "t"...
+	deltaTime=millis() - lastTime;
+	if(deltaTime >= refreshTime){         		// If it's time to compute...
+	  cli();                              		// Desativa todas as interrupções durante o cálculo;
+	  pwm = computePID(pulses[1]*1.5,0, true);
+	  lastTime = millis();                		// Update lastTime
+	  sei();                             		// Reativa todas as interrupções
+	}
+	run(pwm);
   }
   run(0); // Turn off the motor
 }
 
-void DC_motor_controller::stop_both(unsigned int t=200){
+void DC_motor_controller::stop_both(int vel=0){
+  int t = (vel == 0) ? 100 : (vel*2); 	// If vel is 0, t is 100. If so, t change to vel*2
   deltaTime=millis() - lastTime;
   if(deltaTime >= refreshTime){         // If it's time to compute...
     cli();                              // Desativa todas as interrupções durante o cálculo;
