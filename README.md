@@ -126,7 +126,7 @@ Para iniciarmos os testes, vamos colocar o seguinte comando no void loop ()
 
 ```cpp
 void loop(){	// Como talvez você já saiba, esse é o noso "loop", o que o nosso programa ficará "fazendo"
-	motor.walk(50);	//Essa linha de código pede para o motor "motor" girar na velocidade de 50 RPM
+	mot.walk(50);	//Essa linha de código pede para o motor "mot" girar na velocidade de 50 RPM
 }
 ```
 Agora que você já tem o void setup () com as devidas configurações e o void loop () com o comando que pede para o motor girar em uma determinada velocidade, agora é o momento em que você deve enviar o código para o Arduino e testar o motor, observando se ele girou como esperado (calmamente e em uma velocidade quase constante).
@@ -144,7 +144,7 @@ Agora que você já tem o void setup () com as devidas configurações e o void 
 
 # Métodos
  ```cpp
-	motor.walk(float velocidade_desejada);
+	mot.walk(float velocidade_desejada);
  
  ```
 
