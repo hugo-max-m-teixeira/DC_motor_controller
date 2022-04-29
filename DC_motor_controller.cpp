@@ -8,6 +8,17 @@
 
 #include <DC_motor_controller.h>
 
+// cria uma outra classe (ponteiro)
+DC_motor_controller *pointer_motor;
+
+static void motor_interrupt (){
+	pointer_motor->isr();
+}
+/*
+void DC_motor_controller::setInterrupt(){
+	//attachInterrupt(digitalPinToInterrupt(encoderPinA), interrupt, FALLING);
+}*/
+
 void DC_motor_controller::hBridge(uint8_t in1, uint8_t in2, uint8_t en){
   this-> in1 = in1;
   this-> in2 = in2;
@@ -20,6 +31,7 @@ void DC_motor_controller::setPins(){
   pinMode(en, OUTPUT);
   pinMode(encoderPinA, INPUT);
   pinMode(encoderPinB, INPUT);
+  attachInterrupt(digitalPinToInterrupt(encoderPinA), motor_interrupt, FALLING);
 }
 
 void DC_motor_controller::run(int pwm){
@@ -91,6 +103,10 @@ int DC_motor_controller::getPWM(){
 	return pwm;
 }
 
+unsigned int DC_motor_controller::getRefreshTime(){
+  return refreshTime;
+}
+
 void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
   this->kp = kp;
   this->ki = ki;
@@ -131,6 +147,18 @@ int DC_motor_controller::computeAll(float sp){
   return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
 }
 
+byte DC_motor_controller::doPID(float input, float sp){ // Looks like compulte_all, but it don't use RPM as input value
+  deltaTime = millis() - lastTime;      // Tempo decorrido
+
+  if(deltaTime >= refreshTime){         // Se o tempo deccorrido for maior ou igual ao tempo de refresh...
+    cli();                              // Desativa todas as interrupções para o cálculo
+    pwm = computePID(input, sp, false); // Calcula o valor do PID                       
+    lastTime = millis();                // Atualiza o tempo
+    sei();                              // Reativa todas as interrupções durante o cálculo
+  }
+  return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
+}
+
 void DC_motor_controller::walk(float sp){
     if(sp==0){
       run(0);
@@ -163,6 +191,8 @@ void DC_motor_controller::walk(float sp, float rot){
         lastTime = millis();                  // Atualiza o tempo, quando ocorreu essa execução
         sei();                                // Reativa todas as interrupções
       }
+      
+      
       run((rot > 0) ? pwm : -pwm);
       if(rot > 0){
       	can_run_local = (pulses[1] < totalPulses)? true : false;
@@ -172,7 +202,7 @@ void DC_motor_controller::walk(float sp, float rot){
     }
     lastT=millis();
     pulses[1]=0;
-    while((millis() - lastT) <=200){        //Stop!
+    while((millis() - lastT) <=100){        //Stop!
       deltaTime = millis() - lastTime;      // De acordo como tempo
       if(deltaTime >= refreshTime){
         cli();                              // Desativa todas as interrupções durante o cálculo;
@@ -183,13 +213,18 @@ void DC_motor_controller::walk(float sp, float rot){
       run(pwm);
     }
     resetForGyrate();
+    lastError = 0;
   }
 }
 
 void DC_motor_controller::resetForGyrate(){
-  deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=error; lastTime=millis(); rpm=0; deltaTime=0;
+  deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
   can_run=true; pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
   run(0);
+}
+
+void DC_motor_controller::reset(){
+	resetForGyrate();
 }
 
 bool DC_motor_controller::canRun(){
@@ -214,32 +249,67 @@ void DC_motor_controller::gyrate(float sp, float rot=0){
         }
         run((rot>0) ? pwm : -pwm);
         if(rot>0){
-            can_run = (pulses[1] < totalPulses)? true : false;
+        	can_run = (pulses[1] < totalPulses)? true : false;
         }else{
             can_run = (pulses[1] > totalPulses)? true : false;
         }
     }
 }
-
-void DC_motor_controller::stop(){
-	resetForGyrate();
-	deltaTime = millis() - lastTime;     		// Tempo decorrido
-	float last_pulses_values[3] = {10, 10, 10}; // Default values
-	byte i=0;
-
-	while(((millis() - lastT) <=250) && last_pulses_values[0]!=0 && last_pulses_values[1]!=0 && last_pulses_values[2]!=0){        	//Stop!
-      deltaTime = millis() - lastTime;      	// De acordo como tempo
-      if(deltaTime >= refreshTime){
-        cli();                              	// Desativa todas as interrupções durante o cálculo;
-        pwm = computePID(pulses[1]*2.0,0, true);
-        lastTime = millis();
-        if(i > 2) i=0;
-        last_pulses_values[i] = pulses[1];
-        i++;
-        sei(); // Reativa todas as interrupções
-        delay(50);
-      }
-      run(pwm);
-    }
-    run(0);
+void DC_motor_controller::stop(unsigned int t=0, int vel=0){
+  t = (vel == 0) ? 100 : (vel*2); 				// If vel is 0, t is 100. If so, t change to vel*2
+  unsigned long lastT_local = millis();
+  while((millis() - lastT_local) < t){     		// For the time "t"...
+	deltaTime=millis() - lastTime;
+	if(deltaTime >= refreshTime){         		// If it's time to compute...
+	  cli();                              		// Desativa todas as interrupções durante o cálculo;
+	  pwm = computePID(pulses[1]*1.5,0, true);
+	  lastTime = millis();                		// Update lastTime
+	  sei();                             		// Reativa todas as interrupções
+	}
+	run(pwm);
+  }
+  run(0); // Turn off the motor
 }
+
+void DC_motor_controller::stop_both(int vel=0){
+  int t = (vel == 0) ? 100 : (vel*2); 	// If vel is 0, t is 100. If so, t change to vel*2
+  deltaTime=millis() - lastTime;
+  if(deltaTime >= refreshTime){         // If it's time to compute...
+    cli();                              // Desativa todas as interrupções durante o cálculo;
+    pwm = computePID(pulses[1]*1.5,0, true);
+    lastTime = millis();                // Update lastTime
+    sei();                              // Reativa todas as interrupções
+  }
+  run(pwm);
+}
+
+void DC_motor_controller::accelerate(float sp, float accel){
+	float time_sec = sp / accel;
+	unsigned long last_time_local = millis(), delta_time_local = 0;
+	
+	while(delta_time_local < (time_sec*1000)){
+		delta_time_local = millis() - last_time_local;
+		
+		long vel = (delta_time_local/1000.0) * accel;
+		
+		byte pwm = computeAll(vel);
+		
+		run(pwm);		
+	}
+}
+/*
+void decelerate(float intitial_vel, float accel){
+	float time_sec = sp / accel;
+	unsigned long last_time_local = millis(), delta_time_local = 0;
+	
+	while(delta_time_local < (time_sec*1000)){
+		delta_time_local = millis() - last_time_local;
+		
+		long vel = initial_vel - ((delta_time_local/1000.0) * accel);
+		
+		byte pwm = computeAll(vel);
+		
+		run(pwm);		
+	}
+}
+*/

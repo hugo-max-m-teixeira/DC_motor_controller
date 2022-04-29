@@ -28,24 +28,29 @@ class DC_motor_controller{
     void setPins();	// Configura os pinos usados pelo programa
 
     // Actions:
-    void run(int pwm);					// Apply a simple pwm over the motor
+    void run(int pwm);					// Apply a simple pwm on the motor
     void walk(float sp);
-    void walk(float sp, float rot);		// Motor simple walk - For only one motor and it uses While
+    void walk(float sp, float rot);	// Motor simple walk - For only one motor and it uses While
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
-    void stop(); 						// Stops the motor
+    void stop(unsigned int t=0, int vel=0);
+    void stop_both(int vel=0);
+   	void accelerate(float sp, float accel);
+   	void decelerate(float initial_vel, float accel);
 
     // Others...
     void isr();
     void computeRPM();
     float getRPM();
-    void resetPID();
+    void reset();
     bool canRun();
+    bool canStop();
     void resetForGyrate();
-    int getPWM(); // Retorna o PWm aplicado aos motores
+    int getPWM(); // Retorna o PWM aplicado aos motores
+    unsigned int getRefreshTime();
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
 
-private:
+//private:
     int maxI = 200;
     void applyIntegralLimit();
     unsigned long lastTime = 0, deltaTime, refreshTime=50;
@@ -56,6 +61,7 @@ private:
     float error, lastError = 0;
     int computePID(float input, float sp, bool derivative);
     int computeAll(float sp);
+    byte doPID(float input, float sp); // Compute PID based on a input value and refresh 
     uint8_t in1, in2, en;
     bool can_run=false;
     uint16_t deltaT=0, lastT; // Controle de tempo e pulsos do métodp gyrate
