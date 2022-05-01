@@ -139,13 +139,85 @@ Agora que você já tem o void setup () com as devidas configurações e o void 
 - Inverter os pinos de IN (responsáveis pelo controle de direção de rotação dos motores) da ponte H no Arduino (ex.: se o pino de IN1 estava conectado no pino 12 do Arduino e o IN2 estava no pino 13, agora o IN1 vai para o 13 e o IN2 vai para o 12);
 
 ## "O motor não está girando"
-- Pode ser mau contato em alguma conexão dos pinos da ponte H
+- Pode ser mau contato em alguma conexão dos pinos da ponte H. Verifique as conexões entre os pinos da sua placa Arduino e a ponte H.
 
+## "Mesmo depois de ter tentado tudo o que você disse acima, há algo de errado com o motor :( "
+ - Então, se você chegou até aqui e continua com problemas, o seu caso é mais específico. Não convém muito deixar textos muito grandes aqui nesse README só explicando cada possibilidade de erro. Logo, sugiro que acesse o site de debug da biblioteca: (site em desenvolvimento...) Carinha triste :|
 
-# Métodos
+<br><br>
+
+# Métodos principais
+
+<br>
+
+## Aplicar força (PWM)
+```cpp
+mot.run(int pwm_desejado);
+```
+ - Aplica uma força (controlada por meio de PWM, simplesmente) no motor.
+ - Observação interessante: Lemsre-se que o PWM, na maioria das placas Arduino comuns, é um valor que varia entre 0 (desligado) e 255 (força máxima).
+
+ <br><br>
+
+ ## Girar em velocidade constante (walk simples)
  ```cpp
-	mot.walk(float velocidade_desejada);
- 
+mot.walk(float velocidade_desejada);
  ```
+ - O motor tenta girar em uma velocidade constante (velocidade angular constante).
+ - Argumentos (respectivamente):
+    - velocidade_desejada = velocidade com a qual você desea que o motor gire (em RPM)
+ - Observação interessante: Lembre-se que a biblioteca usa um sistema de controle baseado em PID para tentar manter a velocidade do motor constante. Apesar disso, peuqenos desvios de velocidade podem ocorrer devido a vários fatores externos.
+
+<br><br>
+
+## Girar algumas rotações em velocidade constante (walk com número de rotações)
+
+```cpp
+mot.walk(float velocidade_desejada, float numero_de_rotacoes);
+```
+ - O motor tenta girar determinada quantidade de rotações mantendo uma velocidade constante.
+- Argumentos (respectivamente):
+    - velocidade_desejada = velocidade com a qual você desea que o motor gire (em RPM)
+    - numero_de_rotacoes = número de rotações que você deseja que o motor desenvolva (número de voltas que o eixo do motor deve girar)
+- Observação interessante: Esse método é um pouco mais preciso do que o "walk simples" (o método anterior) por ter o número de rotações determinado diretamente pelo usuário.
+
+<br><br>
+
+## Parar (stop)
+```cpp
+mot.stop(unsigned int tempo_desejado);
+```
+ - Faz com que o motor tente permanecer parado (sem girar), mesmo com forças extenas agindo em seu eixo, por determinado tempo.
+- Argumentos (respectivamente):
+    - tempo_desejado = tempo em milissegundos (1 segundo = 1000 milissegundos) que o motor deve permanecer parado. Lembre-se que esse argumento só pode assumir valores positivos (unsigned).
+
+<br><br>
+
+## Reset (reiniciar)
+```cpp
+mot.reset();
+```
+ - Reinicia o motor (as variáveis de tempo, os valores do PID e a contagem do RPM)
+ - Usado sempre que:
+    - O motor terminar de realizar alguma movimentação e passar a realizar outra.
+
+
+
+## Acelerar (em desenvolvimento)
+
+```cpp
+mot.accelerate(float velocidade_final, float aceleracao);   // Velocidade final em RPM e aceleração em RPM/segundo 
+```
+
+ - Acelera o motor até uma velocidade final (<strong>"método em desenvolvimento!!!"</strong>)
+ - Argumentos (respectivamente): 
+    - velocidade_final = velocidade final do motor (em RPM)
+    - aceleracao = aceleração (em RPM/segudo)
+ - Observação interessante: o tempo que o motor leva para acelerar até a velocidade final pode ser calculado, aproximadamente, por: <br>
+    ```Tempo = Velocidade_final / Aceleração```
+
+
+
+
 
 
