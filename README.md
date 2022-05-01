@@ -26,7 +26,7 @@ E depois:
 ```
 
 - Pela Arduino IDE (tanto Linux quanto Windows):
-	1. Baixe o arquivo .zip (clique no botão verde "code" ou "código", que fica mais acima nessa mesma página e clique em baixar .zip);
+	1. Baixe o arquivo .zip <a href="https://github.com/hugo-max-m-teixeira/DC_motor_controller/archive/refs/heads/master.zip">clicando aqui</a>;
 	2. Abra a Arduno IDE;
 	3. Na barra superior de menu, vá para sketch -> Incluir biblioteca -> Incluir biblioteca .zip;
 	4. Selecione o arquivo que você baixou e cliue em "OK" ou "abrir".
