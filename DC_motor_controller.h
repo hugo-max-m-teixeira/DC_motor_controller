@@ -36,6 +36,11 @@ class DC_motor_controller{
     void stop_both(int vel=0);
    	void accelerate(float sp, float accel);
    	void decelerate(float initial_vel, float accel);
+   	
+   	//Debug functions
+   	void debug_max_vel();
+   	void debug_crazy();
+   	void invert_direction();
 
     // Others...
     void isr();

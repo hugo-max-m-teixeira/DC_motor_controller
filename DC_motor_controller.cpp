@@ -113,6 +113,25 @@ void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
   this->kd = kd;
 }
 
+void DC_motor_controller::debug_max_vel(){
+	int old_encoderPinA = encoderPinA, old_encoderPinB = encoderPinB;
+	encoderPinA = old_encoderPinB;
+	encoderPinB = old_encoderPinA;
+}
+
+void DC_motor_controller::invert_direction(){
+	int old_in1 = in1, old_in2 = in2, old_encoderPinA = encoderPinA, old_encoderPinB = encoderPinB;
+	
+	debug_max_vel();
+	
+	in1 = old_in2;
+	in2 = old_in1;
+}
+
+void DC_motor_controller::debug_crazy(){
+
+}
+
 int DC_motor_controller::computePID(float input, float sp, bool derivative){ // Compute and return the PID value.
   error = sp - input;                                   // Calcula o erro
 
