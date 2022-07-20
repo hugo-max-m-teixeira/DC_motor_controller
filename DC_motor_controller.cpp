@@ -2,22 +2,12 @@
 	Autor: Hugo Max M. Teixeira
 	Data: 05/2021
 
-	Elsta biblioteca tem por objetivo realizar o controle com maior precisão de motores com sensor encoder;
+	Esta biblioteca tem por objetivo realizar o controle com maior precisão de motores com sensor encoder;
 
 */
 
 #include <DC_motor_controller.h>
 
-// cria uma outra classe (ponteiro)
-DC_motor_controller *pointer_motor;
-
-static void motor_interrupt (){
-	pointer_motor->isr();
-}
-/*
-void DC_motor_controller::setInterrupt(){
-	//attachInterrupt(digitalPinToInterrupt(encoderPinA), interrupt, FALLING);
-}*/
 
 void DC_motor_controller::hBridge(uint8_t in1, uint8_t in2, uint8_t en){
   this-> in1 = in1;
@@ -31,7 +21,6 @@ void DC_motor_controller::setPins(){
   pinMode(en, OUTPUT);
   pinMode(encoderPinA, INPUT);
   pinMode(encoderPinB, INPUT);
-  attachInterrupt(digitalPinToInterrupt(encoderPinA), motor_interrupt, FALLING);
 }
 
 void DC_motor_controller::run(int pwm){
@@ -92,6 +81,10 @@ void DC_motor_controller::computeRPM(){
   if(deltaTime >= refreshTime){
     rpm = (pulses[0] * (60000.0 / (ppr * rr))) / deltaTime;
     pulses[0] = 0;
+    
+    if(is_counting){
+    	total_rot += rpm*deltaTime/60000.0;
+    }
   }
 }
 
@@ -128,9 +121,6 @@ void DC_motor_controller::invert_direction(){
 	in2 = old_in1;
 }
 
-void DC_motor_controller::debug_crazy(){
-
-}
 
 int DC_motor_controller::computePID(float input, float sp, bool derivative){ // Compute and return the PID value.
   error = sp - input;                                   // Calcula o erro
@@ -178,7 +168,7 @@ byte DC_motor_controller::doPID(float input, float sp){ // Looks like compulte_a
   return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
 }
 
-void DC_motor_controller::walk(float sp){
+void DC_motor_controller::walk(float sp){	// Simply makes the wheel run by a constant velocity
     if(sp==0){
       run(0);
     }else{
@@ -315,6 +305,19 @@ void DC_motor_controller::accelerate(float sp, float accel){
 		
 		run(pwm);		
 	}
+}
+
+void DC_motor_controller::startCounting(){
+	is_counting = true;
+	total_rot = 0;
+}
+
+void DC_motor_controller::stopCounting(){
+	is_counting = false;
+}
+
+float DC_motor_controller::getRotations(){
+	return total_rot;
 }
 /*
 void decelerate(float intitial_vel, float accel){
