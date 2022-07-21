@@ -26,6 +26,7 @@ E depois:
 ```
 
 - Pela Arduino IDE (tanto Linux quanto Windows):
+
 	1. Baixe o arquivo .zip <a href="https://github.com/hugo-max-m-teixeira/DC_motor_controller/archive/refs/heads/master.zip">clicando aqui</a>;
 	2. Abra a Arduno IDE;
 	3. Na barra superior de menu, vá para sketch -> Incluir biblioteca -> Incluir biblioteca .zip;
@@ -134,9 +135,18 @@ Agora que você já tem o void setup () com as devidas configurações e o void 
 ## "O motor fica girando para frente e para trás como um doido" ou "O motor está girando na velocidade máxima"
 - Mau contato em algum dos pinos do encoder (verificar antes do passo seguinte);
 - Inverter fisicamente os pinos do encoder do motor que estão conectados ao Arduino, invertendo a posição deles na placa (ex.: o cabo que estava no pino 1 agora vai para o pino 2 e o cabo que estava no pino 2 vai para o pino 1);
+- Tente usar o método:
+```cpp
+mot.debug_max_vel();
+```
+
 ## "O motor está girando para o lado errado"
 - Inverter fisicamente os pinos do encoder do motor que estão conectados ao Arduino, invertendo a posição deles na placa (ex.: o cabo que estava no pino 1 agora vai para o pino 2 e o cabo que estava no pino 2 vai para o pino 1);
 - Inverter os pinos de IN (responsáveis pelo controle de direção de rotação dos motores) da ponte H no Arduino (ex.: se o pino de IN1 estava conectado no pino 12 do Arduino e o IN2 estava no pino 13, agora o IN1 vai para o 13 e o IN2 vai para o 12);
+- Tente usar o método:
+```cpp
+mot.invert_direction();
+```
 
 ## "O motor não está girando"
 - Pode ser mau contato em alguma conexão dos pinos da ponte H. Verifique as conexões entre os pinos da sua placa Arduino e a ponte H.
@@ -201,7 +211,7 @@ mot.reset();
  - Usado sempre que:
     - O motor terminar de realizar alguma movimentação e passar a realizar outra.
 
-
+<br><br>
 
 ## Acelerar (em desenvolvimento)
 
@@ -216,8 +226,39 @@ mot.accelerate(float velocidade_final, float aceleracao);   // Velocidade final 
  - Observação interessante: o tempo que o motor leva para acelerar até a velocidade final pode ser calculado, aproximadamente, por: <br>
     ```Tempo = Velocidade_final / Aceleração```
 
+<br><br>
 
+## Iniciar contagem de rotações (em desenvolvimento)
 
+```cpp
+mot.startCounting();   // Inicia a contagem das rotações dadas apartir daqui
+```
 
+ - Inicia a contagem do número de rotações a partir daqui.
+ - <strong>Em desenvolvimento!!!</strong>
+ 
+ <br><br>
+ 
+## Retornar número de rotações dadas (em desenvolvimento)
 
+```cpp
+float rotations = mot.getRotations();   // Retorna o número de rotações dadas desde o início da contagem
+```
 
+ - Retorna o número de rotações dadas desde o início da contagem (com o startCounting()).
+ - A variável "rotations", no exemplo dado acima, armazena o número retornado pela função.
+ - Observação: Tipo de retorno float.
+ 
+ <br><br>
+
+## Parar contagem de rotações (em desenvolvimento)
+
+```cpp
+mot.stopCounting();	// Interrompe a contagem do número de rotações
+```
+
+ - Interrompe a contagem do número de rotações.
+ - Sim, esse método é importante, pois evita de o microcontrolador continuar incrementando desnecessariamente o número de rotações dadas.
+
+ 
+ 

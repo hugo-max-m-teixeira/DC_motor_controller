@@ -2,11 +2,12 @@
 	Autor: Hugo Max M. Teixeira
 	Data: 05/2021
 
-	Elsta biblioteca tem por objetivo realizar o controle com maior precisão de motores com sensor encoder;
+	Esta biblioteca tem por objetivo realizar o controle com maior precisão de motores com sensor encoder;
 
 */
 
 #include <DC_motor_controller.h>
+
 
 void DC_motor_controller::hBridge(uint8_t in1, uint8_t in2, uint8_t en){
   this-> in1 = in1;
@@ -80,6 +81,10 @@ void DC_motor_controller::computeRPM(){
   if(deltaTime >= refreshTime){
     rpm = (pulses[0] * (60000.0 / (ppr * rr))) / deltaTime;
     pulses[0] = 0;
+    
+    if(is_counting){
+    	total_rot += rpm*deltaTime/60000.0;
+    }
   }
 }
 
@@ -100,6 +105,22 @@ void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
   this->ki = ki;
   this->kd = kd;
 }
+
+void DC_motor_controller::debug_max_vel(){
+	int old_encoderPinA = encoderPinA, old_encoderPinB = encoderPinB;
+	encoderPinA = old_encoderPinB;
+	encoderPinB = old_encoderPinA;
+}
+
+void DC_motor_controller::invert_direction(){
+	int old_in1 = in1, old_in2 = in2, old_encoderPinA = encoderPinA, old_encoderPinB = encoderPinB;
+	
+	debug_max_vel();
+	
+	in1 = old_in2;
+	in2 = old_in1;
+}
+
 
 int DC_motor_controller::computePID(float input, float sp, bool derivative){ // Compute and return the PID value.
   error = sp - input;                                   // Calcula o erro
@@ -135,7 +156,19 @@ int DC_motor_controller::computeAll(float sp){
   return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
 }
 
-void DC_motor_controller::walk(float sp){
+byte DC_motor_controller::doPID(float input, float sp){ // Looks like compulte_all, but it don't use RPM as input value
+  deltaTime = millis() - lastTime;      // Tempo decorrido
+
+  if(deltaTime >= refreshTime){         // Se o tempo deccorrido for maior ou igual ao tempo de refresh...
+    cli();                              // Desativa todas as interrupções para o cálculo
+    pwm = computePID(input, sp, false); // Calcula o valor do PID                       
+    lastTime = millis();                // Atualiza o tempo
+    sei();                              // Reativa todas as interrupções durante o cálculo
+  }
+  return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
+}
+
+void DC_motor_controller::walk(float sp){	// Simply makes the wheel run by a constant velocity
     if(sp==0){
       run(0);
     }else{
@@ -167,6 +200,8 @@ void DC_motor_controller::walk(float sp, float rot){
         lastTime = millis();                  // Atualiza o tempo, quando ocorreu essa execução
         sei();                                // Reativa todas as interrupções
       }
+      
+      
       run((rot > 0) ? pwm : -pwm);
       if(rot > 0){
       	can_run_local = (pulses[1] < totalPulses)? true : false;
@@ -187,11 +222,12 @@ void DC_motor_controller::walk(float sp, float rot){
       run(pwm);
     }
     resetForGyrate();
+    lastError = 0;
   }
 }
 
 void DC_motor_controller::resetForGyrate(){
-  deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=error; lastTime=millis(); rpm=0; deltaTime=0;
+  deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
   can_run=true; pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
   run(0);
 }
@@ -230,7 +266,7 @@ void DC_motor_controller::gyrate(float sp, float rot=0){
 }
 void DC_motor_controller::stop(unsigned int t=0, int vel=0){
   t = (vel == 0) ? 100 : (vel*2); 				// If vel is 0, t is 100. If so, t change to vel*2
-  unsigned int lastT_local = millis();
+  unsigned long lastT_local = millis();
   while((millis() - lastT_local) < t){     		// For the time "t"...
 	deltaTime=millis() - lastTime;
 	if(deltaTime >= refreshTime){         		// If it's time to compute...
@@ -254,4 +290,32 @@ void DC_motor_controller::stop_both(int vel=0){
     sei();                              // Reativa todas as interrupções
   }
   run(pwm);
+}
+
+void DC_motor_controller::accelerate(float sp, float accel){
+	float time_sec = sp / accel;
+	unsigned long last_time_local = millis(), delta_time_local = 0;
+	
+	while(delta_time_local < (time_sec*1000)){
+		delta_time_local = millis() - last_time_local;
+		
+		long vel = (delta_time_local/1000.0) * accel;
+		
+		byte pwm = computeAll(vel);
+		
+		run(pwm);		
+	}
+}
+
+void DC_motor_controller::startCounting(){
+	is_counting = true;
+	total_rot = 0;
+}
+
+void DC_motor_controller::stopCounting(){
+	is_counting = false;
+}
+
+float DC_motor_controller::getRotations(){
+	return total_rot;
 }

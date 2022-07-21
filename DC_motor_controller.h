@@ -34,12 +34,19 @@ class DC_motor_controller{
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
     void stop(unsigned int t=0, int vel=0);
     void stop_both(int vel=0);
-    //void setInterrupt();
-
+   	void accelerate(float sp, float accel);
+   	   	
+   	//Debug functions
+   	void debug_max_vel();		// Debug function that fix max velocity motor error
+   	void invert_direction();	// Revert the direction of the motor (when it's inverted)
+   	
     // Others...
     void isr();
     void computeRPM();
     float getRPM();
+    void startCounting();	// Starts counting rotations number since now
+    void stopCounting();	// Stops counting rotations number
+    float getRotations();	// Returns the actual rotations cumulated number
     void reset();
     bool canRun();
     bool canStop();
@@ -54,16 +61,20 @@ class DC_motor_controller{
     void applyIntegralLimit();
     unsigned long lastTime = 0, deltaTime, refreshTime=50;
     uint8_t encoderPinA, encoderPinB;
-    float ppr=11, rr, rpm;
-    float kp=1.8, ki=1, kd=0.15, P=0, I=0, D=0, pid;	// Valores padrão para as constantes do PID;
-    int pwm=0;
+    float ppr = 11, rr, rpm;
+    float kp = 1.2, ki = 1, kd = 0.15, P = 0, I = 0, D = 0, pid;	// Valores padrão para as constantes do PID;
+    int pwm = 0;
     float error, lastError = 0;
     int computePID(float input, float sp, bool derivative);
     int computeAll(float sp);
+    byte doPID(float input, float sp); // Compute PID based on a input value and refresh 
     uint8_t in1, in2, en;
-    bool can_run=false;
-    uint16_t deltaT=0, lastT; // Controle de tempo e pulsos do métodp gyrate
-    long Pulses=0;
+    bool can_run = false;
+    uint16_t deltaT = 0, lastT; // Controle de tempo e pulsos do métodp gyrate
+    long Pulses = 0;
+    
+    bool is_counting = false;
+    unsigned long total_rot = 0;
 
 };
 
