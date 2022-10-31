@@ -51,11 +51,11 @@ void DC_motor_controller::setEncoderPin(uint8_t pinA, uint8_t pinB){
 
 void DC_motor_controller::isr(){
   if(digitalRead(encoderPinB)){ // Sentido horário
-    pulses[0]++;
-    pulses[1]++;
+    pulses[0]+= direction;
+    pulses[1]+= direction;
   } else {  // Sentido anti-horário
-    pulses[0]--;
-    pulses[1]--;
+    pulses[0]-= direction;
+    pulses[1]-= direction;
   }
 }
 
@@ -106,16 +106,14 @@ void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
   this->kd = kd;
 }
 
-void DC_motor_controller::debug_max_vel(){
-	int old_encoderPinA = encoderPinA, old_encoderPinB = encoderPinB;
-	encoderPinA = old_encoderPinB;
-	encoderPinB = old_encoderPinA;
+void DC_motor_controller::debugMaxVel(){
+	direction = -1;
 }
 
-void DC_motor_controller::invert_direction(){
+void DC_motor_controller::invertDirection(){
 	int old_in1 = in1, old_in2 = in2, old_encoderPinA = encoderPinA, old_encoderPinB = encoderPinB;
 	
-	debug_max_vel();
+	debugMaxVel();
 	
 	in1 = old_in2;
 	in2 = old_in1;

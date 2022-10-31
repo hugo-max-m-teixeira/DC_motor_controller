@@ -15,3 +15,5 @@ getRPM	KEYWORD2
 resetPID	KEYWORD2
 canRun	KEYWORD2
 resetForGyrate	KEYWORD2
+debugMaxVel	KEYWORD2
+invertDirection	KEYWORD2

@@ -37,8 +37,8 @@ class DC_motor_controller{
    	void accelerate(float sp, float accel);
    	   	
    	//Debug functions
-   	void debug_max_vel();		// Debug function that fix max velocity motor error
-   	void invert_direction();	// Revert the direction of the motor (when it's inverted)
+   	void debugMaxVel();		// Debug function that fix max velocity motor error
+   	void invertDirection();	// Revert the direction of the motor (when it's inverted)
    	
     // Others...
     void isr();
@@ -75,6 +75,7 @@ class DC_motor_controller{
     
     bool is_counting = false;
     unsigned long total_rot = 0;
+    int direction = 1;
 
 };
 
