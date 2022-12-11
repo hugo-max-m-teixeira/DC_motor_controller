@@ -12,7 +12,7 @@ um controle mais preciso dos motores DC com encoder.
   - Fonte de alimentação extra para a ponte H (que alimentará os motores)
   
 # Instalando a bilbioteca:
-Existem duas maneiras principais pelas quais você pode fexer isso. Uma delas é pelo Git (a que eu recomendo) e a outra é baixando o arquivo .zip e depois instalando pelo Arduino IDE. 
+Existem duas maneiras principais pelas quais você pode fazer isso. Uma delas é pelo Git (a que eu recomendo) e a outra é baixando o arquivo .zip e depois instalando pelo Arduino IDE. 
 Recomendo instalar pelo Git para que fique mais fácil para você atualizar a biblioteca, bastando executar um git pull no terminal na pasta da biblioteca. Lembrabdo que, para que você consiga fazer o processo pelo git, o mesmo já deve estar devidamente configurado em sua máquina. Para isso, vá até a pasta libraries do Arduino:
 
 - Via terminal no Linux, abra o terminal e digite o seguinte comando (ele entrará na pasta de biblitecas do Arduino IDE)
@@ -30,7 +30,7 @@ E depois:
 	1. Baixe o arquivo .zip <a href="https://github.com/hugo-max-m-teixeira/DC_motor_controller/archive/refs/heads/master.zip">clicando aqui</a>;
 	2. Abra a Arduno IDE;
 	3. Na barra superior de menu, vá para sketch -> Incluir biblioteca -> Incluir biblioteca .zip;
-	4. Selecione o arquivo que você baixou e cliue em "OK" ou "abrir".
+	4. Selecione o arquivo que você baixou e clique em "OK" ou "abrir".
 
 # Como usar essa biblioteca?
 
@@ -123,7 +123,7 @@ void setup(){
 
 # Debug 
 Então, até aqui vimos o como "configurar", pelo menos em parte, o nosso motor na programação e na ponte H L298N. Agora vamos fazer alguns testes para verificar se tudo está correto e se todos os pinos foram informados na ordem correta.
-Para iniciarmos os testes, vamos colocar o seguinte comando no void loop ()
+Para iniciarmos os testes, vamos colocar o seguinte comando no void loop ():
 
 ```cpp
 void loop(){	// Como talvez você já saiba, esse é o noso "loop", o que o nosso programa ficará "fazendo"
@@ -137,7 +137,7 @@ Agora que você já tem o void setup () com as devidas configurações e o void 
 - Inverter fisicamente os pinos do encoder do motor que estão conectados ao Arduino, invertendo a posição deles na placa (ex.: o cabo que estava no pino 1 agora vai para o pino 2 e o cabo que estava no pino 2 vai para o pino 1);
 - Tente usar o método:
 ```cpp
-mot.debug_max_vel();
+mot.debugMaxVel();
 ```
 
 ## "O motor está girando para o lado errado"
@@ -145,7 +145,7 @@ mot.debug_max_vel();
 - Inverter os pinos de IN (responsáveis pelo controle de direção de rotação dos motores) da ponte H no Arduino (ex.: se o pino de IN1 estava conectado no pino 12 do Arduino e o IN2 estava no pino 13, agora o IN1 vai para o 13 e o IN2 vai para o 12);
 - Tente usar o método:
 ```cpp
-mot.invert_direction();
+mot.invertDirection();
 ```
 
 ## "O motor não está girando"

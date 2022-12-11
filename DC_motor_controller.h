@@ -74,7 +74,7 @@ class DC_motor_controller{
     long Pulses = 0;
     
     bool is_counting = false;
-    unsigned long total_rot = 0;
+    float total_rot = 0;
     int direction = 1;
 
 };
