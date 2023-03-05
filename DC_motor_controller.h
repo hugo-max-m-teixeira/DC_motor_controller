@@ -59,6 +59,7 @@ class DC_motor_controller{
 //private:
     int maxI = 200;
     void applyIntegralLimit();
+    void ifNegativeAllNegative(float &val_1, float &val_2);
     unsigned long lastTime = 0, deltaTime, refreshTime=50;
     uint8_t encoderPinA, encoderPinB;
     float ppr = 11, rr, rpm;

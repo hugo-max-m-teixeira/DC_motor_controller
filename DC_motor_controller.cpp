@@ -193,6 +193,7 @@ void DC_motor_controller::walk(float sp, float rot){
       run(computeAll(sp));
     }
   } else {
+	ifNegativeAllNegative(sp, rot);
     long totalPulses=rot*ppr*rr;
     resetForGyrate();
     lastTime=millis();
@@ -253,6 +254,7 @@ void DC_motor_controller::gyrate(float sp, float rot=0){
         walk(sp, 0);
         can_run = false;
     } else {
+    	ifNegativeAllNegative(sp, rot);
         long totalPulses=rot*ppr*rr;
         deltaTime = millis() - lastTime;   // De acordo como tempo
         if(deltaTime >= refreshTime){
@@ -304,6 +306,8 @@ void DC_motor_controller::accelerate(float sp, float accel){
 	float time_sec = sp / accel;
 	unsigned long last_time_local = millis(), delta_time_local = 0;
 	
+	ifNegativeAllNegative(sp, accel);
+	
 	while(delta_time_local < (time_sec*1000)){
 		delta_time_local = millis() - last_time_local;
 		
@@ -326,4 +330,11 @@ void DC_motor_controller::stopCounting(){
 
 float DC_motor_controller::getRotations(){
 	return total_rot;
+}
+
+void DC_motor_controller::ifNegativeAllNegative(float &val_1, float &val_2){
+	if ((val_1 < 0) || (val_2 < 0)){ // Garante que os dois valores sejam negativos no caso de um dos valores ser negativo.
+  		val_1 = -abs(val_1);
+  		val_2 = -abs(val_2);
+  	}
 }
