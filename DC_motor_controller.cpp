@@ -219,7 +219,7 @@ void DC_motor_controller::walk(float sp, float rot){
     }
     lastT=millis();
     pulses[1]=0;
-    stop_vel(sp);
+    if(anti_inertia)	stop_vel(sp);
     resetForGyrate();
     lastError = 0;
   }
