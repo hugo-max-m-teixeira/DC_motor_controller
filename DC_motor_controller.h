@@ -32,7 +32,7 @@ class DC_motor_controller{
     void walk(float sp);
     void walk(float sp, float rot);	// Motor simple walk - For only one motor and it uses While
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
-    void stop(unsigned int t=0, int vel=0);
+    void stop(unsigned int t=0);
     void stop_both(int vel=0);
    	void accelerate(float sp, float accel);
    	   	
@@ -55,6 +55,7 @@ class DC_motor_controller{
     unsigned int getRefreshTime();
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
+    bool anti_inertia = true;
 
 //private:
     int maxI = 200;
@@ -77,6 +78,11 @@ class DC_motor_controller{
     bool is_counting = false;
     float total_rot = 0;
     int direction = 1;
+
+    float inertia_time_coeficient = 1.7;
+    int max_anti_inertia_time = 250; // Max anti_intertia time action.
+    float anti_inertia_time(float vel);
+    void stop_vel(unsigned int vel = 0);
 
 };
 
