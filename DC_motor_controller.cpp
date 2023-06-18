@@ -41,12 +41,11 @@ void DC_motor_controller::run(int pwm){
     }
     pwm = abs(pwm);
      
-		if((in1 == en) || (in2 == en)){	// If enable pin is also a direction control pin, PWM must be
-																		// applied on a control pin that is on HIGH state
+		if((in1 == en) || (in2 == en)){	// If enable pin is also a direction control pin, PWM must be applied on a control pin that is on HIGH state
 	 		if(digitalRead(in1)){					// If in1 is the control pin that is HIGH 
-	 			 analogWrite(in1, pwm);			// PWM is applied on in1
+	 			analogWrite(in1, pwm);			// PWM is applied on in1
 	 		} else if(digitalRead(in2)){	// If in2 is the control pin that is HIGH 
-	 			analogWrite(in2, pwm);			// PWM is applied on in2
+	 		  analogWrite(in2, pwm);			// PWM is applied on in2
 	 		}
 	 	} else {												// Else, PWM is applied on enable pin 
     	analogWrite(en, pwm);
