@@ -34,7 +34,7 @@ class DC_motor_controller{
     void walk(float sp, float rot);	// Motor simple walk - For only one motor and it uses While
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
     void stop(unsigned int t=0);
-    void stop_both(int vel=0);
+    void stop_both(int time=0);
    	void accelerate(float sp, float accel);
    	   	
    	//Debug functions
@@ -84,6 +84,7 @@ class DC_motor_controller{
     int max_anti_inertia_time = 250; // Max anti_intertia time action.
     float anti_inertia_time(float vel=0);
     void stop_vel(unsigned int vel = 0);
+    unsigned int elapsed_stop_time = 0;
 
 };
 

@@ -94,7 +94,7 @@ void DC_motor_controller::computeRPM(){
 	deltaTime = millis() - lastTime;
 
 	if(deltaTime >= refreshTime){
-		rpm = (pulses[0] * (30000.0 / (ppr * rr))) / deltaTime;;
+		rpm = (pulses[0] * (60000.0 / (ppr * rr))) / deltaTime;;
 		pulses[0] = 0; 
 
 		if(is_counting){
@@ -196,6 +196,7 @@ void DC_motor_controller::walk(float sp, float rot){
 		lastTime=millis();
 		while(can_run)	gyrate(sp, rot);
 		lastT=millis();
+		reset();
 		stop_vel(sp);
 	}
 }
@@ -203,6 +204,7 @@ void DC_motor_controller::walk(float sp, float rot){
 void DC_motor_controller::resetForGyrate(){
 	deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
 	can_run=true; pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
+	elapsed_stop_time = 0;
 	run(0);
 }
 
@@ -220,12 +222,12 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 		can_run = false;
 	} else {
 		ifNegativeAllNegative(sp, rot);
-		long totalPulses=rot*ppr*rr*2;
+		long totalPulses=rot*ppr*rr;
 		deltaTime = millis() - lastTime;   // De acordo como tempo
 		if(deltaTime >= refreshTime){
 			cli(); // Desativa todas as interrupções durante o cálculo;
 			deltaT=millis()-lastT; // Calcula o tempo decorrido
-			Pulses=(deltaT*sp*ppr*rr)/30000.0; // Calcula a quantidade necessária da pulsos
+			Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
 			if(rot>0)   pwm = computePID(pulses[1],Pulses,true);
 			else        pwm = computePID(-pulses[1],-Pulses,true);
 			lastTime = millis();
@@ -260,15 +262,16 @@ void DC_motor_controller::stop_vel(unsigned int vel /*= 0*/){
   stop(anti_inertia_time(vel));
 }
 
-void DC_motor_controller::stop_both(int vel /*= 0*/){
-	
+void DC_motor_controller::stop_both(int time /*= 0*/){
 	deltaTime=millis() - lastTime;
 	if(deltaTime >= refreshTime){         // If it's time to compute...
 		cli();                              // Desativa todas as interrupções durante o cálculo;
 		pwm = computePID(pulses[1],0, true);
-		lastTime = millis();                // Update lastTime
 		sei();                              // Reativa todas as interrupções
+		lastTime = millis();                // Update lastTime
+		elapsed_stop_time += deltaTime;
 	}
+	can_stop = (elapsed_stop_time < time)? true : false;
 	run(pwm);
 }
 
