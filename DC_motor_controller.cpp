@@ -122,7 +122,7 @@ void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
 }
 
 void DC_motor_controller::debugMaxVel(){
-	direction = -1;
+	direction = -direction;
 }
 
 void DC_motor_controller::invertDirection(){
