@@ -62,17 +62,20 @@ class DC_motor_controller{
     int maxI = 200;
     void applyIntegralLimit();
     void ifNegativeAllNegative(float &val_1, float &val_2);
-    unsigned long lastTime = 0, deltaTime, refreshTime=50;
+    unsigned long lastTime = 0, deltaTime, refreshTime=50;  // Usado pelo PID
+    unsigned long lastTime_accel = 0;// For acceleration control
     uint8_t encoderPinA, encoderPinB;
     float ppr = 11, rr, rpm;
     float kp = 1.2, ki = 1, kd = 0.15, P = 0, I = 0, D = 0, pid;	// Valores padrão para as constantes do PID;
     int pwm = 0;
+    int default_acceleration = 50;	// 50 RMP/s
+    
     float error, lastError = 0;
     int computePID(float input, float sp, bool derivative);
     int computeAll(float sp);
     byte doPID(float input, float sp); // Compute PID based on a input value and refresh 
     uint8_t in1, in2, en;
-    bool can_run = false, can_stop = false;
+    bool can_run = false, can_stop = false, can_accelerate = false;
     uint16_t deltaT = 0, lastT; // Controle de tempo e pulsos do métodp gyrate
     long Pulses = 0;
     
