@@ -166,9 +166,9 @@ int DC_motor_controller::computeAll(float sp){
 		
 		if(can_accelerate){ // Considerando a velocidade dinicial = 0
 			
-			static int actual_vel = default_acceleration * deltaTime;
+			uint64_t elapsed_time = millis() -  lastTime_accel;
+			int actual_vel = default_acceleration * elapsed_time/1000.0;
 			sp = actual_vel;
-			
 			
 		} 
 		
@@ -216,7 +216,7 @@ void DC_motor_controller::walk(float sp, float rot){
 void DC_motor_controller::resetForGyrate(){
 	deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
 	can_run=true; 
-	can_accelerate = true;	lastTime_accel = 0;
+	can_accelerate = true;	lastTime_accel = millis();
 	pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
 	elapsed_stop_time = 0;
 	run(0);

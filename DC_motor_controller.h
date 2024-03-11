@@ -68,7 +68,7 @@ class DC_motor_controller{
     float ppr = 11, rr, rpm;
     float kp = 1.2, ki = 1, kd = 0.15, P = 0, I = 0, D = 0, pid;	// Valores padrão para as constantes do PID;
     int pwm = 0;
-    int default_acceleration = 50;	// 50 RMP/s
+    int default_acceleration = 2;	// 50 RMP/s
     
     float error, lastError = 0;
     int computePID(float input, float sp, bool derivative);
