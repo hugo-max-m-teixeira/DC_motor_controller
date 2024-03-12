@@ -59,7 +59,6 @@ class DC_motor_controller{
     bool anti_inertia = true;
 
 //private:
-    int maxI = 200;
     void applyIntegralLimit();
     void ifNegativeAllNegative(float &val_1, float &val_2);
     unsigned long lastTime = 0, deltaTime, refreshTime=50;  // Usado pelo PID
@@ -70,6 +69,7 @@ class DC_motor_controller{
     int pwm = 0;
     int default_acceleration = 2;	// 50 RMP/s
     
+    int maxI = 255;
     float error, lastError = 0;
     int computePID(float input, float sp, bool derivative);
     int computeAll(float sp);

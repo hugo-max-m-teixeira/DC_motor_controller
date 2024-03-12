@@ -90,6 +90,18 @@ void DC_motor_controller::setMaxI(int max){
     this->maxI = max;
 }
 
+float DC_motor_controller::getRPM(){
+	return rpm;
+}
+
+int DC_motor_controller::getPWM(){
+	return pwm;
+}
+
+unsigned int DC_motor_controller::getRefreshTime(){
+	return refreshTime;
+}
+
 void DC_motor_controller::computeRPM(){
 	deltaTime = millis() - lastTime;
 
@@ -101,18 +113,6 @@ void DC_motor_controller::computeRPM(){
 			total_rot += rpm*deltaTime/60000.0;
 		}
 	}
-}
-
-float DC_motor_controller::getRPM(){
-	return rpm;
-}
-
-int DC_motor_controller::getPWM(){
-	return pwm;
-}
-
-unsigned int DC_motor_controller::getRefreshTime(){
-	return refreshTime;
 }
 
 void DC_motor_controller::setPIDconstants(float kp, float ki, float kd){
@@ -143,7 +143,11 @@ int DC_motor_controller::computePID(float input, float sp, bool derivative){ // 
 	derivative ? D = (error - lastError) * kd / (deltaTime / 1000.0) : D=0;
 
 	applyIntegralLimit();
+	
+	Serial.println("P: " + String(P) + '\t' + "I: " + String(I) + '\t' + "D: " + String(D) + '\t' + "Delta time: " + String(I * 10.0));
+	
 	pid = P + I + D;                                      // pid receba a soma de P, I e D
+	Serial.println("PID: " + String(pid) + '\n');
 
 	lastError = error;                                    // Erro anterior = erro atual
 
@@ -162,21 +166,24 @@ int DC_motor_controller::computeAll(float sp){
 		cli();                              // Desativa todas as interrupções para o cálculo
 		computeRPM();                       // Calcula a velocidade atual
 		
-		if(rpm >= sp) can_accelerate = false;
-		
 		if(can_accelerate){ // Considerando a velocidade dinicial = 0
 			
 			uint64_t elapsed_time = millis() -  lastTime_accel;
 			int actual_vel = default_acceleration * elapsed_time/1000.0;
-			sp = actual_vel;
 			
+			if(actual_vel >= sp){
+				can_accelerate = false;
+			} else {
+				sp = actual_vel;
+			}
 		} 
-		
 		
 		pwm = computePID(rpm, sp, false);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
 											// e o set point(sp)
+		Serial.println(String(sp) + '\t' + String(rpm) + '\t' + String(error));
+		
 		lastTime = millis();                // Atualiza o tempo
-		sei();                              // Reativa todas as interrupções após o cálculok		
+		sei();                              // Reativa todas as interrupções após o cálculo		
 	}
 	return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
 }
