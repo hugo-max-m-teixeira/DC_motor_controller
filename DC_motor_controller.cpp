@@ -208,14 +208,17 @@ void DC_motor_controller::walk(float sp){	// Simply makes the wheel run by a con
 void DC_motor_controller::walk(float sp, float rot){
 	bool can_run_local = true;
 	if(rot == 0){
-		if(sp==0)	run(0);
+		if(sp == 0)	run(0);
 		else		run(computeAll(sp));
 	} else {
 		reset();
 		lastTime=millis();
 		if(smooth){
-			bool accel_triangle = (pow(sp, 2)/default_acceleration > rot) ? true : false;
-			if(!accel_triangle){ // 
+			bool accel_triangle = ((pow(sp, 2)/(default_acceleration*60.0)) > rot) ? true : false;
+			//Serial.println("Acceleration and deceleration space: " + String((pow(sp, 2)/(default_acceleration*60.0) > rot)));
+			//Serial.println("rot: " + String(rot));
+			//Serial.println("Acceleration triangle: " + String((pow(sp, 2)/(default_acceleration*60.0) > rot) ? true : false));
+			if(!accel_triangle){
 				while(can_run)	gyrate(sp, rot);
 			} else { // RPM doesnt't reaches the maximun vel, only accelerates and decelerates
 			
@@ -266,6 +269,8 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 					sp = actual_vel;
 				}
 			}
+			
+			Serial.println(String(sp) + '\t' + String(rpm) + '\t' + String(error));
 		
 			cli(); // Desativa todas as interrupções durante o cálculo;
 			
@@ -273,8 +278,8 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 			
 			Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
 			
-			if(rot>0)   pwm = computePID(pulses[1],Pulses,true);
-			else        pwm = computePID(-pulses[1],-Pulses,true);
+			if(rot>0)   pwm = computePID(pulses[1],Pulses, false);
+			else        pwm = computePID(-pulses[1],-Pulses, false);
 			
 			lastTime = millis();
 			
