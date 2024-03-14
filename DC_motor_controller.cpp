@@ -144,10 +144,10 @@ int DC_motor_controller::computePID(float input, float sp, bool derivative){ // 
 
 	applyIntegralLimit();
 	
-	Serial.println("P: " + String(P) + '\t' + "I: " + String(I) + '\t' + "D: " + String(D) + '\t' + "Delta time: " + String(I * 10.0));
+	//Serial.println("P: " + String(P) + '\t' + "I: " + String(I) + '\t' + "D: " + String(D) + '\t' + "Delta time: " + String(I * 10.0));
 	
 	pid = P + I + D;                                      // pid receba a soma de P, I e D
-	Serial.println("PID: " + String(pid) + '\n');
+	//Serial.println("PID: " + String(pid) + '\n');
 
 	lastError = error;                                    // Erro anterior = erro atual
 
@@ -166,7 +166,7 @@ int DC_motor_controller::computeAll(float sp){
 		cli();                              // Desativa todas as interrupções para o cálculo
 		computeRPM();                       // Calcula a velocidade atual
 		
-		if(can_accelerate){ // Considerando a velocidade dinicial = 0
+		if(can_accelerate){ // Considerando a velocidade inicial = 0
 			
 			uint64_t elapsed_time = millis() -  lastTime_accel;
 			int actual_vel = default_acceleration * elapsed_time/1000.0;
@@ -180,7 +180,7 @@ int DC_motor_controller::computeAll(float sp){
 		
 		pwm = computePID(rpm, sp, false);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
 											// e o set point(sp)
-		Serial.println(String(sp) + '\t' + String(rpm) + '\t' + String(error));
+		//Serial.println(String(sp) + '\t' + String(rpm) + '\t' + String(error));
 		
 		lastTime = millis();                // Atualiza o tempo
 		sei();                              // Reativa todas as interrupções após o cálculo		
@@ -211,9 +211,17 @@ void DC_motor_controller::walk(float sp, float rot){
 		if(sp==0)	run(0);
 		else		run(computeAll(sp));
 	} else {
-		resetForGyrate();
+		reset();
 		lastTime=millis();
-		while(can_run)	gyrate(sp, rot);
+		if(smooth){
+			bool accel_triangle = (pow(sp, 2)/default_acceleration > rot) ? true : false;
+			if(!accel_triangle){ // 
+				while(can_run)	gyrate(sp, rot);
+			} else { // RPM doesnt't reaches the maximun vel, only accelerates and decelerates
+			
+			}
+		}
+		
 		lastT=millis();
 		reset();
 		stop_vel(sp);
@@ -246,15 +254,35 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 		long totalPulses=rot*ppr*rr;
 		deltaTime = millis() - lastTime;   // De acordo como tempo
 		if(deltaTime >= refreshTime){
+		
+			if(can_accelerate){ // Considerando a velocidade inicial = 0
+				
+				uint64_t elapsed_time = millis() -  lastTime_accel;
+				int actual_vel = default_acceleration * elapsed_time/1000.0;
+				
+				if(actual_vel >= sp){
+					can_accelerate = false;
+				} else {
+					sp = actual_vel;
+				}
+			}
+		
 			cli(); // Desativa todas as interrupções durante o cálculo;
+			
 			deltaT=millis()-lastT; // Calcula o tempo decorrido
+			
 			Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
+			
 			if(rot>0)   pwm = computePID(pulses[1],Pulses,true);
 			else        pwm = computePID(-pulses[1],-Pulses,true);
+			
 			lastTime = millis();
+			
 			sei(); // Reativa todas as interrupções
 		}
+		
 		run((rot>0) ? pwm : -pwm);
+		
 		if(rot>0){
 			can_run = (pulses[1] < totalPulses)? true : false;
 		}else{

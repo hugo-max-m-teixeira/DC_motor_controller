@@ -63,11 +63,12 @@ class DC_motor_controller{
     void ifNegativeAllNegative(float &val_1, float &val_2);
     unsigned long lastTime = 0, deltaTime, refreshTime=50;  // Usado pelo PID
     unsigned long lastTime_accel = 0;// For acceleration control
+    bool smooth = true;
     uint8_t encoderPinA, encoderPinB;
     float ppr = 11, rr, rpm;
     float kp = 1.2, ki = 1, kd = 0.15, P = 0, I = 0, D = 0, pid;	// Valores padrão para as constantes do PID;
     int pwm = 0;
-    int default_acceleration = 2;	// 50 RMP/s
+    int default_acceleration = 50;	// 50 RMP/s
     
     int maxI = 255;
     float error, lastError = 0;
