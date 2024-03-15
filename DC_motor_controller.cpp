@@ -135,16 +135,18 @@ void DC_motor_controller::invertDirection(){
 }
 
 
-int DC_motor_controller::computePID(float input, float sp, bool derivative){ // Compute and return the PID value.
+int DC_motor_controller::computePID(float input, float sp, float error_coeficient){ // Compute and return the PID value.
 	error = sp - input;                                   // Calcula o erro
+	
+	error *= error_coeficient;
 
 	P = error * kp;                                       // Calcula a proporcional
 	I += error * ki * (deltaTime / 1000.0);               // Calcula a integral
-	derivative ? D = (error - lastError) * kd / (deltaTime / 1000.0) : D=0;
+	D = (error - lastError) * kd / (deltaTime / 1000.0);
 
 	applyIntegralLimit();
 	
-	//Serial.println("P: " + String(P) + '\t' + "I: " + String(I) + '\t' + "D: " + String(D) + '\t' + "Delta time: " + String(I * 10.0));
+	//Serial.println("P: " + String(P) + '\t' + "I: " + String(I) + '\t' + "D: " + String(D) /*+ '\t' + "Delta time: " + String(I * 10.0)*/);
 	
 	pid = P + I + D;                                      // pid receba a soma de P, I e D
 	//Serial.println("PID: " + String(pid) + '\n');
@@ -178,7 +180,7 @@ int DC_motor_controller::computeAll(float sp){
 			}
 		} 
 		
-		pwm = computePID(rpm, sp, false);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
+		pwm = computePID(rpm, sp, 1);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
 											// e o set point(sp)
 		//Serial.println(String(sp) + '\t' + String(rpm) + '\t' + String(error));
 		
@@ -193,7 +195,7 @@ byte DC_motor_controller::doPID(float input, float sp){ // Looks like compulte_a
 
 	if(deltaTime >= refreshTime){         // Se o tempo deccorrido for maior ou igual ao tempo de refresh...
 		cli();                              // Desativa todas as interrupções para o cálculo
-		pwm = computePID(input, sp, false); // Calcula o valor do PID                       
+		pwm = computePID(input, sp, 1); // Calcula o valor do PID                       
 		lastTime = millis();                // Atualiza o tempo
 		sei();                              // Reativa todas as interrupções durante o cálculo
 	}
@@ -217,7 +219,7 @@ void DC_motor_controller::walk(float sp, float rot){
 			bool accel_triangle = ((pow(sp, 2)/(default_acceleration*60.0)) > rot) ? true : false;
 			//Serial.println("Acceleration and deceleration space: " + String((pow(sp, 2)/(default_acceleration*60.0) > rot)));
 			//Serial.println("rot: " + String(rot));
-			//Serial.println("Acceleration triangle: " + String((pow(sp, 2)/(default_acceleration*60.0) > rot) ? true : false));
+			Serial.println("Acceleration triangle: " + String(accel_triangle));
 			if(!accel_triangle){
 				while(can_run)	gyrate(sp, rot);
 			} else { // RPM doesnt't reaches the maximun vel, only accelerates and decelerates
@@ -238,6 +240,7 @@ void DC_motor_controller::resetForGyrate(){
 	pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
 	elapsed_stop_time = 0;
 	run(0);
+	print("Motor reseted!");
 }
 
 void DC_motor_controller::reset(){
@@ -256,6 +259,11 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 		ifNegativeAllNegative(sp, rot);
 		long totalPulses=rot*ppr*rr;
 		deltaTime = millis() - lastTime;   // De acordo como tempo
+		
+		cli(); // Desativa todas as interrupções durante o cálculo;
+		
+		deltaT=millis()-lastT; // Calcula o tempo decorrido
+		
 		if(deltaTime >= refreshTime){
 		
 			if(can_accelerate){ // Considerando a velocidade inicial = 0
@@ -263,23 +271,31 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 				uint64_t elapsed_time = millis() -  lastTime_accel;
 				int actual_vel = default_acceleration * elapsed_time/1000.0;
 				
+				
+				
+				Pulses=(pow(elapsed_time, 2) * default_acceleration       *ppr*rr)/120000.0; // Calcula a quantidade necessária da pulsos	
+				
+				Serial.println("Pulses: " + String(Pulses)) + "\n";
+				
 				if(actual_vel >= sp){
 					can_accelerate = false;
 				} else {
 					sp = actual_vel;
 				}
+			} else {
+				Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos			
 			}
 			
-			Serial.println(String(sp) + '\t' + String(rpm) + '\t' + String(error));
+			//Serial.println("Set Point: " + String(sp) + '\t' + "RPM: " + String(rpm) + '\t' + "error: " + String(error) + "\n");
 		
-			cli(); // Desativa todas as interrupções durante o cálculo;
 			
-			deltaT=millis()-lastT; // Calcula o tempo decorrido
 			
-			Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos
+		
 			
-			if(rot>0)   pwm = computePID(pulses[1],Pulses, false);
-			else        pwm = computePID(-pulses[1],-Pulses, false);
+			
+			
+			if(rot>0)   pwm = computePID(pulses[1],Pulses, pulses_error_coeficient);
+			else        pwm = computePID(-pulses[1],-Pulses, pulses_error_coeficient);
 			
 			lastTime = millis();
 			
@@ -302,7 +318,7 @@ void DC_motor_controller::stop(unsigned int t /*= 0*/){
 		deltaTime=millis() - lastTime;
 		if(deltaTime >= refreshTime){         		// If it's time to compute...
 			cli();                              		// Desativa todas as interrupções durante o cálculo;
-			pwm = computePID(pulses[1],0, true);
+			pwm = computePID(pulses[1],0, 1);
 			lastTime = millis();                		// Update lastTime
 			sei();                             		// Reativa todas as interrupções
 		}
@@ -320,7 +336,7 @@ void DC_motor_controller::stop_both(int time /*= 0*/){
 	deltaTime=millis() - lastTime;
 	if(deltaTime >= refreshTime){         // If it's time to compute...
 		cli();                              // Desativa todas as interrupções durante o cálculo;
-		pwm = computePID(pulses[1],0, true);
+		pwm = computePID(pulses[1],0, 1);
 		sei();                              // Reativa todas as interrupções
 		lastTime = millis();                // Update lastTime
 		elapsed_stop_time += deltaTime;
@@ -373,4 +389,14 @@ void DC_motor_controller::ifNegativeAllNegative(float &val_1, float &val_2){
   		val_1 = -abs(val_1);
   		val_2 = -abs(val_2);
   	}
+}
+
+void DC_motor_controller::print (String text, bool new_line = true){
+	if(show_logs){ 
+		if(new_line) {
+			Serial.println(text);
+		} else {
+			Serial.print(text);
+		}
+	}
 }
