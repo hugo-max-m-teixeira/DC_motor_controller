@@ -258,41 +258,31 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 	} else {
 		ifNegativeAllNegative(sp, rot);
 		long totalPulses=rot*ppr*rr;
-		deltaTime = millis() - lastTime;   // De acordo como tempo
+		deltaTime = millis() - lastTime;   // De acordo como tempo (para o PID)
 		
-		cli(); // Desativa todas as interrupções durante o cálculo;
-		
-		deltaT=millis()-lastT; // Calcula o tempo decorrido
+		static uint64_t last_gived_pulses=0;
 		
 		if(deltaTime >= refreshTime){
-		
-			if(can_accelerate){ // Considerando a velocidade inicial = 0
+			cli();
+			if(can_accelerate){
+				float elapsed_time = (millis() -  lastTime_accel)/1000.0; // Tempo decorrido para a aceleração
+				int actual_vel = default_acceleration * elapsed_time;
 				
-				uint64_t elapsed_time = millis() -  lastTime_accel;
-				int actual_vel = default_acceleration * elapsed_time/1000.0;
-				
-				
-				
-				Pulses=(pow(elapsed_time, 2) * default_acceleration       *ppr*rr)/120000.0; // Calcula a quantidade necessária da pulsos	
-				
-				Serial.println("Pulses: " + String(Pulses)) + "\n";
-				
+				Pulses = (default_acceleration/60.0) * pow((elapsed_time), 2) * ppr * rr / 2; // Calcula a quantidade necessária da pulsos.
+
 				if(actual_vel >= sp){
 					can_accelerate = false;
-				} else {
-					sp = actual_vel;
-				}
-			} else {
-				Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos			
+					//Serial.println("No accelerate");
+					last_gived_pulses = Pulses;
+				}				
 			}
-			
-			//Serial.println("Set Point: " + String(sp) + '\t' + "RPM: " + String(rpm) + '\t' + "error: " + String(error) + "\n");
-		
-			
-			
-		
-			
-			
+			if(!can_accelerate) {
+				deltaT=millis()-lastT; // Calcula o tempo decorrido (para a contagem dos pulsos)
+				Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos	
+				Pulses -= last_gived_pulses;
+			}
+
+			//Serial.println("Pulses: " + String(Pulses));
 			
 			if(rot>0)   pwm = computePID(pulses[1],Pulses, pulses_error_coeficient);
 			else        pwm = computePID(-pulses[1],-Pulses, pulses_error_coeficient);

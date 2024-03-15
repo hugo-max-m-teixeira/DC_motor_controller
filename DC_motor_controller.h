@@ -92,7 +92,7 @@ class DC_motor_controller{
     unsigned int elapsed_stop_time = 0;
     
     bool show_logs = false;
-    void print(String text, bool new_line=true);
+    void print(String text, bool new_line = true);
 
 };
 
