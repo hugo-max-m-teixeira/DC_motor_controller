@@ -69,7 +69,7 @@ class DC_motor_controller{
     float kp = 1.2, ki = 1, kd = 0.15, P = 0, I = 0, D = 0, pid;	// Valores padrão para as constantes do PID;
     int pwm = 0;
     int default_acceleration = 50;	// 50 RMP/s
-    float pulses_error_coeficient = 0.25;
+    float pulses_error_coeficient = 1;
     
     int maxI = 255;
     float error, lastError = 0;
@@ -90,6 +90,8 @@ class DC_motor_controller{
     float anti_inertia_time(float vel=0);
     void stop_vel(unsigned int vel = 0);
     unsigned int elapsed_stop_time = 0;
+
+    long rotationsToPulses(float rot);
     
     bool show_logs = false;
     void print(String text, bool new_line = true);

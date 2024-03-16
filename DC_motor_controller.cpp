@@ -220,11 +220,11 @@ void DC_motor_controller::walk(float sp, float rot){
 			//Serial.println("Acceleration and deceleration space: " + String((pow(sp, 2)/(default_acceleration*60.0) > rot)));
 			//Serial.println("rot: " + String(rot));
 			Serial.println("Acceleration triangle: " + String(accel_triangle));
-			if(!accel_triangle){
+			//if(!accel_triangle){
 				while(can_run)	gyrate(sp, rot);
-			} else { // RPM doesnt't reaches the maximun vel, only accelerates and decelerates
+			//} else { // RPM doesnt't reaches the maximun vel, only accelerates and decelerates
 			
-			}
+			//}
 		}
 		
 		lastT=millis();
@@ -257,7 +257,7 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 		can_run = false;
 	} else {
 		ifNegativeAllNegative(sp, rot);
-		long totalPulses=rot*ppr*rr;
+		long totalPulses = rotationsToPulses(rot);
 		deltaTime = millis() - lastTime;   // De acordo como tempo (para o PID)
 		
 		static uint64_t last_gived_pulses=0;
@@ -265,24 +265,30 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 		if(deltaTime >= refreshTime){
 			cli();
 			if(can_accelerate){
-				float elapsed_time = (millis() -  lastTime_accel)/1000.0; // Tempo decorrido para a aceleração
+				float elapsed_time = (millis()-lastTime_accel)/1000.0; // Tempo decorrido desde o início da aceleração, em segundos
 				int actual_vel = default_acceleration * elapsed_time;
 				
-				Pulses = (default_acceleration/60.0) * pow((elapsed_time), 2) * ppr * rr / 2; // Calcula a quantidade necessária da pulsos.
+				Pulses = rotationsToPulses((default_acceleration)*pow((elapsed_time), 2))/120; // Calcula a quantidade necessária da pulsos.
 
 				if(actual_vel >= sp){
 					can_accelerate = false;
 					//Serial.println("No accelerate");
 					last_gived_pulses = Pulses;
-				}				
+				}
 			}
 			if(!can_accelerate) {
 				deltaT=millis()-lastT; // Calcula o tempo decorrido (para a contagem dos pulsos)
-				Pulses=(deltaT*sp*ppr*rr)/60000.0; // Calcula a quantidade necessária da pulsos	
+				Pulses=(rotationsToPulses(sp)*deltaT)/60000; // Calcula a quantidade necessária da pulsos	
 				Pulses -= last_gived_pulses;
 			}
 
 			//Serial.println("Pulses: " + String(Pulses));
+
+			// Conversão do erro em pulsos para rotações, para que não seja necessário alterar as constantes do PID para esse caso
+			// uma vez que a unidade do erro (RPM até então) mudaria para pulsos.
+			pulses_error_coeficient = 60000.0/(rotationsToPulses(deltaTime));
+
+			//Serial.println("pulses_error_coeficient: " + String(pulses_error_coeficient));
 			
 			if(rot>0)   pwm = computePID(pulses[1],Pulses, pulses_error_coeficient);
 			else        pwm = computePID(-pulses[1],-Pulses, pulses_error_coeficient);
@@ -381,7 +387,7 @@ void DC_motor_controller::ifNegativeAllNegative(float &val_1, float &val_2){
   	}
 }
 
-void DC_motor_controller::print (String text, bool new_line = true){
+void DC_motor_controller::print (String text, bool new_line /* = true*/){
 	if(show_logs){ 
 		if(new_line) {
 			Serial.println(text);
@@ -389,4 +395,9 @@ void DC_motor_controller::print (String text, bool new_line = true){
 			Serial.print(text);
 		}
 	}
+}
+
+long DC_motor_controller::rotationsToPulses(float rot){
+	static uint32_t conversion_constant = ppr*rr;
+	return (rot*conversion_constant);
 }
