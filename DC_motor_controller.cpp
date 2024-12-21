@@ -135,28 +135,30 @@ void DC_motor_controller::invertDirection(){
 }
 
 
-int DC_motor_controller::computePID(float input, float sp, float error_coeficient){ // Compute and return the PID value.
-	error = sp - input;                                   // Calcula o erro
+int DC_motor_controller::computePID(float input, float sp, bool reset){ // Compute and return the PID value.
+	float error, P, D , pid;
+	static float I = 0, lastError = 0;
 	
-	error *= error_coeficient;
-
-	P = error * kp;                                       // Calcula a proporcional
-	I += error * ki * (deltaTime / 1000.0);               // Calcula a integral
+	if(reset){
+		I=0;
+		lastError = 0;
+	}
+	
+	error = sp - input;
+	
+	P = error * kp;
+	I += error * ki * (deltaTime / 1000.0);
 	D = (error - lastError) * kd / (deltaTime / 1000.0);
 
-	applyIntegralLimit();
+	applyIntegralLimit(I);
 	
-	//Serial.println("P: " + String(P) + '\t' + "I: " + String(I) + '\t' + "D: " + String(D) /*+ '\t' + "Delta time: " + String(I * 10.0)*/);
-	
-	pid = P + I + D;                                      // pid receba a soma de P, I e D
-	//Serial.println("PID: " + String(pid) + '\n');
+	pid = P + I + D;                                      
+	lastError = error;                                 
 
-	lastError = error;                                    // Erro anterior = erro atual
-
-	return pid;                                           // Retorna o valor do pid
+	return pid;                                          
 }
 
-void DC_motor_controller::applyIntegralLimit(){
+void DC_motor_controller::applyIntegralLimit(float &I){
 	if(I > maxI) I=maxI;
     if(I < -maxI) I=-maxI;
 }
@@ -180,24 +182,12 @@ int DC_motor_controller::computeAll(float sp){
 			}
 		} 
 		
-		pwm = computePID(rpm, sp, 1);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
+		pwm = computePID(rpm, sp);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
 											// e o set point(sp)
 		//Serial.println(String(sp) + '\t' + String(rpm) + '\t' + String(error));
 		
 		lastTime = millis();                // Atualiza o tempo
 		sei();                              // Reativa todas as interrupções após o cálculo		
-	}
-	return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
-}
-
-byte DC_motor_controller::doPID(float input, float sp){ // Looks like compulte_all, but it don't use RPM as input value
-	deltaTime = millis() - lastTime;      // Tempo decorrido
-
-	if(deltaTime >= refreshTime){         // Se o tempo deccorrido for maior ou igual ao tempo de refresh...
-		cli();                              // Desativa todas as interrupções para o cálculo
-		pwm = computePID(input, sp, 1); // Calcula o valor do PID                       
-		lastTime = millis();                // Atualiza o tempo
-		sei();                              // Reativa todas as interrupções durante o cálculo
 	}
 	return pwm;                           // Retorna o valor do pwm (o mesmo do pid)
 }
@@ -234,12 +224,16 @@ void DC_motor_controller::walk(float sp, float rot){
 }
 
 void DC_motor_controller::resetForGyrate(){
-	deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; I=0; D=0; lastError=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
+	deltaT=0; lastT=millis(); Pulses=0; pulses[1]=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
 	can_run=true; 
-	can_accelerate = true;	lastTime_accel = millis();
+	can_accelerate = true;
+	lastTime_accel = millis();
 	pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
 	elapsed_stop_time = 0;
 	run(0);
+	
+	computePID(0,0, true); // Resets the PID cumulative variables
+	
 	print("Motor reseted!");
 }
 
@@ -290,8 +284,8 @@ void DC_motor_controller::gyrate(float sp, float rot /*= 0*/){
 
 			//Serial.println("pulses_error_coeficient: " + String(pulses_error_coeficient));
 			
-			if(rot>0)   pwm = computePID(pulses[1],Pulses, pulses_error_coeficient);
-			else        pwm = computePID(-pulses[1],-Pulses, pulses_error_coeficient);
+			if(rot>0)   pwm = computePID(pulsesToRPM(pulses[1], deltaTime),pulsesToRPM(Pulses, deltaTime));
+			else        pwm = computePID(pulsesToRPM(-pulses[1], deltaTime),pulsesToRPM(-Pulses, deltaTime));
 			
 			lastTime = millis();
 			
@@ -314,7 +308,7 @@ void DC_motor_controller::stop(unsigned int t /*= 0*/){
 		deltaTime=millis() - lastTime;
 		if(deltaTime >= refreshTime){         		// If it's time to compute...
 			cli();                              		// Desativa todas as interrupções durante o cálculo;
-			pwm = computePID(pulses[1],0, 1);
+			pwm = computePID(pulses[1],0);
 			lastTime = millis();                		// Update lastTime
 			sei();                             		// Reativa todas as interrupções
 		}
@@ -332,7 +326,7 @@ void DC_motor_controller::stop_both(int time /*= 0*/){
 	deltaTime=millis() - lastTime;
 	if(deltaTime >= refreshTime){         // If it's time to compute...
 		cli();                              // Desativa todas as interrupções durante o cálculo;
-		pwm = computePID(pulses[1],0, 1);
+		pwm = computePID(pulses[1],0);
 		sei();                              // Reativa todas as interrupções
 		lastTime = millis();                // Update lastTime
 		elapsed_stop_time += deltaTime;
@@ -398,6 +392,11 @@ void DC_motor_controller::print (String text, bool new_line /* = true*/){
 }
 
 long DC_motor_controller::rotationsToPulses(float rot){
-	static uint32_t conversion_constant = ppr*rr;
-	return (rot*conversion_constant);
+	static uint32_t conversionConstant = ppr*rr;
+	return (rot*conversionConstant);
+}
+
+float DC_motor_controller::pulsesToRPM(unsigned long pulses, unsigned long delta_time){
+	static uint32_t conversionConstant = ppr*rr;
+	return (float)pulses*60000.0/(float)(conversionConstant*deltaTime);
 }
