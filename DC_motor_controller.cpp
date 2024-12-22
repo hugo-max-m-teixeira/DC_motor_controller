@@ -205,7 +205,6 @@ int DC_motor_controller::computeAll(float sp){
 }
 
 void DC_motor_controller::walk(float sp, float rot/* = 0*/){
-	bool can_run_local = true;
 	if(rot == 0){
 		if(sp == 0){
 			run(0);
@@ -216,23 +215,26 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 		reset();
 		
 		unsigned long startTime = millis();
-		unsigned long elapsedTimeSinseStart;
+		unsigned long elapsedTimeSinseStart = 0;
 		
 		lastTime=millis();
 		Pulses = 0;
-		if(smooth){
+		if(smoothMode){
 			bool accel_triangle = ((pow(sp, 2)/(default_acceleration*60.0)) > rot) ? true : false;
 			//Serial.println("Acceleration and deceleration space: " + String((pow(sp, 2)/(default_acceleration*60.0) > rot)));
 			//Serial.println("rot: " + String(rot));
 			Serial.println("Acceleration triangle: " + String(accel_triangle));
 			//if(!accel_triangle){
-				while(can_run){
+				while(gyrate(sp, rot, elapsedTimeSinseStart)){
 					elapsedTimeSinseStart = millis() - startTime;
-					gyrate(sp, rot, elapsedTimeSinseStart);
 				}
 			//} else { // RPM doesnt't reaches the maximun vel, only accelerates and decelerates
 			
 			//}
+		} else {
+			while(gyrate(sp, rot, elapsedTimeSinseStart)){
+				elapsedTimeSinseStart = millis() - startTime;
+			}
 		}
 		
 		//lastT=millis();
@@ -242,11 +244,11 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 }
 
 void DC_motor_controller::resetForGyrate(){
-	Pulses=0; pulses[1]=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
-	can_run=true; 
+	Pulses=0; pulses[1]=0; lastTime=millis(); rpm=0; deltaTime=0; 
 	can_accelerate = true;
 	lastTime_accel = millis();
-	pwm = 0; pulses[0] = 0; // Reset the pulses for the PWM counter
+	pwm = 0; 
+	pulses[0] = 0; // Reset the pulses for the PWM counter
 	elapsed_stop_time = 0;
 	run(0);
 	
@@ -259,11 +261,7 @@ void DC_motor_controller::reset(){
 	resetForGyrate();
 }
 
-bool DC_motor_controller::canRun(){
-	return can_run;
-}
-
-void DC_motor_controller::gyrate(float sp, float rot, unsigned long elapsedTimeSinseStart){
+bool DC_motor_controller::gyrate(float sp, float rot, unsigned long elapsedTimeSinseStart){
 	ifNegativeAllNegative(sp, rot);
 	
 	long totalPulses = rotationsToPulses(rot);
@@ -306,26 +304,22 @@ void DC_motor_controller::gyrate(float sp, float rot, unsigned long elapsedTimeS
 	run((rot>0) ? pwm : -pwm);
 	
 	if(rot>0){
-		can_run = (pulses[1] < totalPulses)? true : false;
+		return (pulses[1] < totalPulses)? true : false;
 	}else{
-		can_run = (pulses[1] > totalPulses)? true : false;
+		return (pulses[1] > totalPulses)? true : false;
 	}
-}
-
-void DC_motor_controller::gyrateThreadTask(float sp, float rot, unsigned long elapsedTimeSinseStart){
-	//static uint64_t last_gived_pulses=0;
 	
 }
 
 void DC_motor_controller::stop(unsigned int t /*= 0*/){
-	unsigned long lastT_local = millis();
+	unsigned long startTime = millis();
 	pulses[1] = 0;
-	while((millis() - lastT_local) < t){     		// For the time "t"...
+	while((millis() - startTime) < t){     		// For the time "t"...
 		deltaTime=millis() - lastTime;
 		if(deltaTime >= refreshTime){         		// If it's time to compute...
-			cli();                              		// Desativa todas as interrupções durante o cálculo;
+			cli();                              	// Desativa todas as interrupções durante o cálculo;
 			pwm = computePID(pulses[1],0);
-			lastTime = millis();                		// Update lastTime
+			lastTime = millis();                	// Update lastTime
 			sei();                             		// Reativa todas as interrupções
 		}
 		run(pwm);

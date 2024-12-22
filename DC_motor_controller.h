@@ -31,7 +31,7 @@ class DC_motor_controller{
     // Actions:
     void run(int pwm);					// Apply a simple pwm on the motor
     void walk(float sp, float rot=0);	// Motor simple walk - For only one motor and it uses While
-    void gyrate(float sp, float rot, unsigned long elapsedTimeSinseStart);	// Motor gyrate - For one or two motors and needs be into a while
+    bool gyrate(float sp, float rot, unsigned long elapsedTimeSinseStart);	// Motor gyrate - For one or two motors and needs be into a while
     void stop(unsigned int t=0);
     void stop_both(int time=0);
    	void accelerate(float sp, float accel);
@@ -48,7 +48,7 @@ class DC_motor_controller{
     void stopCounting();	// Stops counting rotations number
     float getRotations();	// Returns the actual rotations cumulated number
     void reset();
-    bool canRun();
+    //bool canRun();
     bool canStop();
     void resetForGyrate();
     int getPWM(); // Retorna o PWM aplicado aos motores
@@ -78,7 +78,7 @@ class DC_motor_controller{
     void ifNegativeAllNegative(float &val_1, float &val_2);
     unsigned long lastTime = 0, deltaTime, refreshTime=50;  // Usado pelo PID
     unsigned long lastTime_accel = 0;// For acceleration control
-    bool smooth = true;
+    bool smoothMode = true;
     uint8_t encoderPinA, encoderPinB;
     float ppr = 11, rr, rpm;
     float kp = 1.2, ki = 1, kd = 0.15;	// Valores padrão para as constantes do PID;
@@ -90,7 +90,7 @@ class DC_motor_controller{
     int computePID(float input, float sp, bool reset = false);
     int computeAll(float sp);
     uint8_t in1, in2, en;
-    bool can_run = false, can_stop = false, can_accelerate = false;
+    bool /*can_run = false*/ can_stop = false, can_accelerate = false;
     long Pulses = 0;
     
     bool is_counting = false;
