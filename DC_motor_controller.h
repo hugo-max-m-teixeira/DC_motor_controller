@@ -91,7 +91,6 @@ class DC_motor_controller{
     int computeAll(float sp);
     uint8_t in1, in2, en;
     bool can_run = false, can_stop = false, can_accelerate = false;
-    uint16_t lastT; // Controle de tempo e pulsos do método gyrate
     long Pulses = 0;
     
     bool is_counting = false;

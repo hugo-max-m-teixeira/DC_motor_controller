@@ -242,7 +242,7 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 }
 
 void DC_motor_controller::resetForGyrate(){
-	lastT=millis(); Pulses=0; pulses[1]=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
+	Pulses=0; pulses[1]=0; lastTime=millis(); rpm=0; deltaTime=0; //lastError = error
 	can_run=true; 
 	can_accelerate = true;
 	lastTime_accel = millis();
