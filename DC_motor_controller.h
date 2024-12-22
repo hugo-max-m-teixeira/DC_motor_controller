@@ -30,8 +30,7 @@ class DC_motor_controller{
 
     // Actions:
     void run(int pwm);					// Apply a simple pwm on the motor
-    void walk(float sp);
-    void walk(float sp, float rot);	// Motor simple walk - For only one motor and it uses While
+    void walk(float sp, float rot=0);	// Motor simple walk - For only one motor and it uses While
     void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
     void stop(unsigned int t=0);
     void stop_both(int time=0);
@@ -43,7 +42,7 @@ class DC_motor_controller{
    	
     // Others...
     void isr();
-    void computeRPM();
+    float computeRPM(long int *pulses_variable, unsigned long deltaTime);
     float getRPM();
     void startCounting();	// Starts counting rotations number since now
     void stopCounting();	// Stops counting rotations number
@@ -59,6 +58,22 @@ class DC_motor_controller{
     bool anti_inertia = true;
 
 //private:
+	// Timing control class (for threading):
+	class Thread {
+	public:
+		unsigned int refreshTime = 50;
+		void setTask(void (*_task)());
+		void thread();
+
+	private:
+		void (*userTask)();
+		unsigned int lastTime = 0;
+
+	};
+	
+	Thread _PIDAndRPMThread;
+	
+
     void applyIntegralLimit(float &I);
     void ifNegativeAllNegative(float &val_1, float &val_2);
     unsigned long lastTime = 0, deltaTime, refreshTime=50;  // Usado pelo PID
@@ -76,7 +91,7 @@ class DC_motor_controller{
     int computeAll(float sp);
     uint8_t in1, in2, en;
     bool can_run = false, can_stop = false, can_accelerate = false;
-    uint16_t deltaT = 0, lastT; // Controle de tempo e pulsos do métodp gyrate
+    uint16_t deltaT = 0, lastT; // Controle de tempo e pulsos do método gyrate
     long Pulses = 0;
     
     bool is_counting = false;
@@ -90,10 +105,11 @@ class DC_motor_controller{
     unsigned int elapsed_stop_time = 0;
 
     long rotationsToPulses(float rot);
-    float pulsesToRPM(unsigned long pulses, unsigned long delta_time);
+    float pulsesToRPM(long pulses, long delta_time);
+    void gyrateThreadTask(float sp, float rot, unsigned long elapsedTimeSinseStart);
     
     bool show_logs = false;
-    void print(String text, bool new_line = true);
+    void print(String text, bool new_line = true);	
 
 };
 
