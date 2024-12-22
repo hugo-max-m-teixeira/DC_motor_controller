@@ -24,6 +24,7 @@ class DC_motor_controller{
     void setRR(float rr);								// Rotation ratio
     void setPIDconstants(float kp, float ki, float kd);	// PID constants (KP, Ki and KD), para mudar os valores das constantes do PID conforme a necessidade
     void setMaxI(int max);
+    void setAcceleration(int acceleration);
 
     // Setting pins:
     void setPins();	// Configura os pinos usados pelo programa
@@ -83,11 +84,11 @@ class DC_motor_controller{
     float ppr = 11, rr, rpm;
     float kp = 1.2, ki = 1, kd = 0.15;	// Valores padrão para as constantes do PID;
     int pwm = 0;
-    int default_acceleration = 50;	// 50 RMP/s
+    unsigned int accelerationInRPMPerSecond = 50;	// 50 RMP/s
     float pulses_error_coeficient = 1;
     
     int maxI = 255;
-    int computePID(float input, float sp, bool reset = false);
+    int computePID(float input, float sp, bool reset = false, bool inputInPulses = false);
     int computeAll(float sp);
     uint8_t in1, in2, en;
     bool /*can_run = false*/ can_stop = false, can_accelerate = false;
@@ -104,6 +105,7 @@ class DC_motor_controller{
     unsigned int elapsed_stop_time = 0;
 
     long rotationsToPulses(float rot);
+    float pulsesToRotations(float pulses);
     float pulsesToRPM(long pulses, long delta_time);
     void gyrateThreadTask(float sp, float rot, unsigned long elapsedTimeSinseStart);
     
