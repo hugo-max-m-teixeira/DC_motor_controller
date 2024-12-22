@@ -31,7 +31,7 @@ class DC_motor_controller{
     // Actions:
     void run(int pwm);					// Apply a simple pwm on the motor
     void walk(float sp, float rot=0);	// Motor simple walk - For only one motor and it uses While
-    void gyrate(float sp, float rot=0);	// Motor gyrate - For one or two motors and needs be into a while
+    void gyrate(float sp, float rot, unsigned long elapsedTimeSinseStart);	// Motor gyrate - For one or two motors and needs be into a while
     void stop(unsigned int t=0);
     void stop_both(int time=0);
    	void accelerate(float sp, float accel);
@@ -91,7 +91,7 @@ class DC_motor_controller{
     int computeAll(float sp);
     uint8_t in1, in2, en;
     bool can_run = false, can_stop = false, can_accelerate = false;
-    uint16_t deltaT = 0, lastT; // Controle de tempo e pulsos do método gyrate
+    uint16_t lastT; // Controle de tempo e pulsos do método gyrate
     long Pulses = 0;
     
     bool is_counting = false;
