@@ -319,6 +319,7 @@ void DC_motor_controller::gyrateThreadTask(float sp, float rot, unsigned long el
 
 void DC_motor_controller::stop(unsigned int t /*= 0*/){
 	unsigned long lastT_local = millis();
+	pulses[1] = 0;
 	while((millis() - lastT_local) < t){     		// For the time "t"...
 		deltaTime=millis() - lastTime;
 		if(deltaTime >= refreshTime){         		// If it's time to compute...
