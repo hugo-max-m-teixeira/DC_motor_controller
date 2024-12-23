@@ -169,13 +169,14 @@ mot.run(int pwm_desejado);
 
  <br><br>
 
- ## Girar em velocidade constante (walk simples)
+## Girar em velocidade constante (walk simples)
  ```cpp
 mot.walk(float velocidade_desejada);
  ```
  - O motor tenta girar em uma velocidade constante (velocidade angular constante).
  - Argumentos (respectivamente):
     - velocidade_desejada = velocidade com a qual você desea que o motor gire (em RPM)
+ - Observação importante: Antes de chamar esse método pela primeira vez é recomendável que seja chamado o método reset() (motor.reset()) para que as variáveis de controle de tempo usadas internamente na biblioteca sejam reajustadas. Caso isso não seja feito antes de chamadas consecutivas do método walk() nesse caso, o motor pode apresentar um overshoot (ultrapassar o valor) de velocidade ao iniciar sua movimentação.
  - Observação interessante: Lembre-se que a biblioteca usa um sistema de controle baseado em PID para tentar manter a velocidade do motor constante. Apesar disso, peuqenos desvios de velocidade podem ocorrer devido a vários fatores externos.
 
 <br><br>
