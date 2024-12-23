@@ -157,7 +157,8 @@ int DC_motor_controller::computePID(float input, float sp, unsigned long deltaTi
 	//Serial.println("|PID input: " + String(input) + "\tPID set point: " + String(sp) + "\tPID error: " + String(error) + "\tPID pulsesToRPM: " + "\tPID deltaTime: " + String((int)deltaTime) + String(pulsesToRPM(error, deltaTime)) + "\tPID input in pulses: " + String(inputInPulses) );
 	
 	if(inputInPulses){
-		error = pulsesToRPM((long)error, deltaTime);
+		//Serial.println("PID Error before conversion:" + String(error));
+		error = pulsesToRPM((long)error, deltaTime)*pulsesToRPMPIDConversionConstant;
 	}
 	
 	//Serial.println("|| PID input: " + String(input) + "\tPID set point: " + String(sp) + "\tPID error: " + String(pulsesToRPM(error, deltaTime)) + "\tPID deltaTime: " + String(deltaTime));
@@ -242,10 +243,8 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 			
 			if(!accel_triangle){
 				accelerate(sp, accelerationInRPMPerSecond);
-				float rotationsDoneWhileAccelerating = pulsesToRotations(pulses[1]);
 				//elapsedTimeSinseStart = millis() - startTime;
-				rot -= rotationsDoneWhileAccelerating;
-				pulses[1] = 0;
+				
 				//reset();
 				/*while(gyrate(sp, rot, elapsedTimeSinseStart)){
 					elapsedTimeSinseStart = millis() - startTime;
@@ -253,8 +252,11 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 			}
 		}
 				
-		unsigned long startTime = millis();
+		lastTime=millis()-refreshTime;
+		unsigned long startTime = millis()-refreshTime;
 		unsigned long elapsedTimeSinseStart = refreshTime;
+		rot -= pulsesToRotations(pulses[1]);
+		pulses[1] = 0;
 		while(gyrate(sp, rot, elapsedTimeSinseStart)){
 			elapsedTimeSinseStart = millis() - startTime;
 		}
@@ -304,6 +306,9 @@ bool DC_motor_controller::gyrate(float sp, float rot, unsigned long elapsedTimeS
 		*/
 		//if(!can_accelerate) {
 			//Serial.println("Elapsed time since start: " + (String)(elapsedTimeSinseStart));
+			//Serial.println("Rotations done since start: " + (String)(pulsesToRotations(pulses[1])));
+			
+			
 			Pulses=(rotationsToPulses(sp)/60000.0)*long(elapsedTimeSinseStart); // Calcula a quantidade necessária da pulsos	
 			//Pulses -= last_gived_pulses;
 		//}

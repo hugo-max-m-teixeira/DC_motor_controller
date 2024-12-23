@@ -56,6 +56,7 @@ class DC_motor_controller{
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
     bool anti_inertia = true;
+    float pulsesToRPMPIDConversionConstant = 0.75;
 
 //private:
 	// Timing control class (for threading):
