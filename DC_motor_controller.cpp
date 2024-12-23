@@ -265,7 +265,7 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 	}
 }
 
-void DC_motor_controller::resetForGyrate(){
+void DC_motor_controller::reset(){
 	Pulses=0; pulses[1]=0; lastTime=millis(); rpm=0; deltaTime=0; 
 	can_accelerate = true;
 	lastTime_accel = millis();
@@ -277,10 +277,6 @@ void DC_motor_controller::resetForGyrate(){
 	computePID(0,0,0, true); // Resets the PID cumulative variables
 	
 	//print("Motor reseted!");
-}
-
-void DC_motor_controller::reset(){
-	resetForGyrate();
 }
 
 bool DC_motor_controller::gyrate(float sp, float rot, unsigned long elapsedTimeSinseStart){

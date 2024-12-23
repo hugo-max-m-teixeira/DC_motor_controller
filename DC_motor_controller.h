@@ -51,7 +51,6 @@ class DC_motor_controller{
     void reset();
     //bool canRun();
     bool canStop();
-    void resetForGyrate();
     int getPWM(); // Retorna o PWM aplicado aos motores
     unsigned int getRefreshTime();
 
