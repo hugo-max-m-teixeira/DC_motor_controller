@@ -129,10 +129,8 @@ void DC_motor_controller::invertDirection(){
 float DC_motor_controller::computeRPM(long int *pulses_variable, unsigned long deltaTime){
 	float rpm; 
 	
-	//rpm = (pulses[0] * (60000.0 / (ppr * rr))) / deltaTime;
 	rpm = ((*pulses_variable) * (60000.0 / (ppr * rr))) / deltaTime;
 	
-	//pulses[0] = 0; 
 	*pulses_variable = 0;
 
 	if(is_counting){
@@ -142,7 +140,7 @@ float DC_motor_controller::computeRPM(long int *pulses_variable, unsigned long d
 	return rpm;
 }
 
-int DC_motor_controller::computePID(float input, float sp, bool reset/* = false*/, bool inputInPulses/* = false*/){ // Compute and return the PID value.
+int DC_motor_controller::computePID(float input, float sp, unsigned long deltaTime, bool reset/* = false*/, bool inputInPulses/* = false*/){ // Compute and return the PID value.
 	float error, P, D , pid;
 	static float I = 0, lastError = 0;
 	
@@ -153,9 +151,16 @@ int DC_motor_controller::computePID(float input, float sp, bool reset/* = false*
 	
 	error = sp - input;
 	
+	//Serial.print("---------- Delta time received by PID: ");
+	//Serial.println(deltaTime);
+	
+	//Serial.println("|PID input: " + String(input) + "\tPID set point: " + String(sp) + "\tPID error: " + String(error) + "\tPID pulsesToRPM: " + "\tPID deltaTime: " + String((int)deltaTime) + String(pulsesToRPM(error, deltaTime)) + "\tPID input in pulses: " + String(inputInPulses) );
+	
 	if(inputInPulses){
-		error = pulsesToRPM(error, deltaTime);
+		error = pulsesToRPM((long)error, deltaTime);
 	}
+	
+	//Serial.println("|| PID input: " + String(input) + "\tPID set point: " + String(sp) + "\tPID error: " + String(pulsesToRPM(error, deltaTime)) + "\tPID deltaTime: " + String(deltaTime));
 	
 	P = error * kp;
 	I += error * ki * (deltaTime / 1000.0);
@@ -166,11 +171,13 @@ int DC_motor_controller::computePID(float input, float sp, bool reset/* = false*
 		D = 0;
 	}
 	
+	//Serial.println("||| PID input: " + String(input) + "\tPID set point: " + String(sp) + "\tPID error: " + String(error));
+	
 	applyIntegralLimit(I);
 	
 	pid = P + I + D;     
 	
-	Serial.println("PID error: " + String(error) + "\tPID output: " + String(pid));
+	//Serial.println("PID error: " + String(error) + "\tPID output: " + String(pid));
 	                           
 	lastError = error;                                 
 
@@ -186,8 +193,9 @@ int DC_motor_controller::computeAll(float sp){
 	deltaTime = millis() - lastTime;      // Tempo decorrido
 
 	if(deltaTime >= refreshTime){        	// Se o tempo deccorrido for maior ou igual ao tempo de refresh...
-		cli();                              // Desativa todas as interrupções para o cálculo
-		rpm = computeRPM(&pulses[0], deltaTime);                       // Calcula a velocidade atual
+		cli(); 
+		                             // Desativa todas as interrupções para o cálculo
+		rpm = computeRPM(&pulses[0], deltaTime);
 		
 		if(can_accelerate){ // Considerando a velocidade inicial = 0
 			
@@ -198,10 +206,12 @@ int DC_motor_controller::computeAll(float sp){
 				can_accelerate = false;
 			} else {
 				sp = actual_vel;
+				//Serial.print("New set Point: ");
+				//Serial.println(sp);
 			}
 		}
 		
-		pwm = computePID(rpm, sp);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
+		pwm = computePID(rpm, sp, deltaTime);   // Calcula o valor do PID tendo como entrada a velocidade(rpm)
 											// e o set point(sp)
 		lastTime = millis();                // Atualiza o tempo
 		sei();                              // Reativa todas as interrupções após o cálculo		
@@ -220,8 +230,8 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 		reset();
 		lastTime=millis();
 		Pulses = 0;
-		/*if(smoothMode){
-			bool accel_triangle = ((pow(abs(sp), 2)/(accelerationInRPMPerSecond*60.0)) > rot) ? true : false;
+		if(smoothMode){
+			bool accel_triangle = ((pow(abs(sp), 2)/(accelerationInRPMPerSecond*60.0)) > abs(rot)) ? true : false;
 			//Serial.println("Acceleration and deceleration space: " + String((pow(sp, 2)/(accelerationInRPMPerSecond*60.0) > rot)));
 			//Serial.println("rot: " + String(rot));
 			//Serial.println("Acceleration triangle: " + String(accel_triangle));
@@ -239,18 +249,18 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 				//reset();
 				/*while(gyrate(sp, rot, elapsedTimeSinseStart)){
 					elapsedTimeSinseStart = millis() - startTime;
-				}
+				}*/
 			}
-		}*/
+		}
 				
 		unsigned long startTime = millis();
-		unsigned long elapsedTimeSinseStart = 0;
+		unsigned long elapsedTimeSinseStart = refreshTime;
 		while(gyrate(sp, rot, elapsedTimeSinseStart)){
 			elapsedTimeSinseStart = millis() - startTime;
 		}
 		
-		//lastT=millis();
 		reset();
+		lastTime=millis();
 		//stop_vel(sp);
 	}
 }
@@ -264,9 +274,9 @@ void DC_motor_controller::resetForGyrate(){
 	elapsed_stop_time = 0;
 	run(0);
 	
-	computePID(0,0, true); // Resets the PID cumulative variables
+	computePID(0,0,0, true); // Resets the PID cumulative variables
 	
-	print("Motor reseted!");
+	//print("Motor reseted!");
 }
 
 void DC_motor_controller::reset(){
@@ -305,8 +315,8 @@ bool DC_motor_controller::gyrate(float sp, float rot, unsigned long elapsedTimeS
 		//Serial.println("Rotations to pulses value: " + String(rotationsToPulses(sp)));
 		//Serial.println("Real pulses value: " + String(pulses[1]) + "\t Desired pulses value: " + String(Pulses)+ '\n');
 
-		if(rot>0)   pwm = computePID(pulses[1],Pulses, false, true);
-		else        pwm = computePID(-pulses[1],-Pulses, false, true);
+		if(rot>0)   pwm = computePID(pulses[1],Pulses, deltaTime, false, true);
+		else        pwm = -computePID(pulses[1],Pulses, deltaTime, false, true);
 
 		sei(); // Reativa todas as interrupções
 			
@@ -330,7 +340,7 @@ void DC_motor_controller::stop(unsigned int t /*= 0*/){
 		deltaTime=millis() - lastTime;
 		if(deltaTime >= refreshTime){         		// If it's time to compute...
 			cli();                              	// Desativa todas as interrupções durante o cálculo;
-			pwm = computePID(pulses[1],0);
+			pwm = computePID(pulses[1],0, deltaTime, false, true);
 			lastTime = millis();                	// Update lastTime
 			sei();                             		// Reativa todas as interrupções
 		}
@@ -347,7 +357,7 @@ void DC_motor_controller::stop_both(int time /*= 0*/){
 	deltaTime=millis() - lastTime;
 	if(deltaTime >= refreshTime){         // If it's time to compute...
 		cli();                              // Desativa todas as interrupções durante o cálculo;
-		pwm = computePID(pulses[1],0);
+		pwm = computePID(pulses[1],0, deltaTime, false, true);
 		sei();                              // Reativa todas as interrupções
 		lastTime = millis();                // Update lastTime
 		elapsed_stop_time += deltaTime;
@@ -357,29 +367,36 @@ void DC_motor_controller::stop_both(int time /*= 0*/){
 }
 
 void DC_motor_controller::accelerate(float sp, float accel){
-	float accelerationTimeInMs = sp / accel * 1000;
+	float accelerationTimeInMs = abs(sp) / accel * 1000;
 	unsigned long startTime = millis(), elapsedTimeSinseStart = 0;
 	
-	ifNegativeAllNegative(sp, accel);
+	//Serial.println("Accelerating...");
+	
+	//ifNegativeAllNegative(sp, accel);
 	
 	while(elapsedTimeSinseStart < accelerationTimeInMs){
 		static unsigned long lastTime = millis();
-		if((millis() - lastTime) >= refreshTime){
+		unsigned long deltaTime = millis() - lastTime;
+		if(deltaTime >= refreshTime){
+			
 		
-			elapsedTimeSinseStart = millis() - startTime;
-		
-			long desiredPulses = rotationsToPulses(accel*pow(elapsedTimeSinseStart/1000.0,2))*30;
+			long desiredPulses = rotationsToPulses(accel*pow((float)elapsedTimeSinseStart/1000.0,2.0))/120;
 			
 			int pwm;
 			
-			if(sp>0)	pwm = computePID(pulsesToRPM(pulses[1], deltaTime),pulsesToRPM(desiredPulses, deltaTime));
-			else		pwm = computePID(pulsesToRPM(-pulses[1], deltaTime),pulsesToRPM(-desiredPulses, deltaTime));
+			//Serial.println("\tDesired pulses: " + String(desiredPulses) + "\t Elapsed time: " + String(elapsedTimeSinseStart) + "\t pulses[1]: " + String(pulses[1]));
+			
+			
+			if(sp>0)	pwm = computePID((float)pulses[1],(float)desiredPulses, deltaTime, false, true);
+			else		pwm = computePID((float)pulses[1],-(float)desiredPulses, deltaTime, false, true);
 			
 			run(pwm);
 			
 			lastTime = millis();
 		}
+		elapsedTimeSinseStart = millis() - startTime;
 	}
+	//Serial.println("Acceleration ended!");
 }
 
 float DC_motor_controller::anti_inertia_time(float vel/* = 50*/){
@@ -431,10 +448,13 @@ float DC_motor_controller::pulsesToRotations(float pulses){
 	return (pulses/(float)(conversionConstant));
 }
 
-float DC_motor_controller::pulsesToRPM(long pulses, long delta_time){
+float DC_motor_controller::pulsesToRPM(long pulses, unsigned long deltaTime){
+	//Serial.println("------------ Delta Time is: " + String(deltaTime));
 	if(deltaTime == 0){
 		return 0;
+		//Serial.println("------------ Delta Time is zero!!!!!!! ---------------------");
 	}
 	static uint32_t conversionConstant = ppr*rr;
+	//Serial.println("------------ RPM is:" + String((float)pulses*60000.0/(conversionConstant*deltaTime)));
 	return (float)pulses*60000.0/(conversionConstant*deltaTime);
 }

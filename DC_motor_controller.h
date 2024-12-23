@@ -88,7 +88,7 @@ class DC_motor_controller{
     float pulses_error_coeficient = 1;
     
     int maxI = 255;
-    int computePID(float input, float sp, bool reset = false, bool inputInPulses = false);
+    int computePID(float input, float sp, unsigned long deltaTime, bool reset = false, bool inputInPulses = false);
     int computeAll(float sp);
     uint8_t in1, in2, en;
     bool /*can_run = false*/ can_stop = false, can_accelerate = false;
@@ -106,7 +106,7 @@ class DC_motor_controller{
 
     long rotationsToPulses(float rot);
     float pulsesToRotations(float pulses);
-    float pulsesToRPM(long pulses, long delta_time);
+    float pulsesToRPM(long pulses, unsigned long deltaTime);
     void gyrateThreadTask(float sp, float rot, unsigned long elapsedTimeSinseStart);
     
     bool show_logs = false;
