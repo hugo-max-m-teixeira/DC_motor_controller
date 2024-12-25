@@ -148,7 +148,7 @@ float DC_motor_controller::computeRPM(long int *pulses_variable, unsigned long d
 
 int DC_motor_controller::computePID(float input, float sp, unsigned long deltaTime, bool reset/* = false*/, bool inputInPulses/* = false*/){ // Compute and return the PID value.
 	float error, P, D , pid;
-	static float I = 0, lastError = 0;
+	//static float I = 0, lastError = 0;
 	
 	if(reset){
 		I=0;
@@ -242,7 +242,8 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 		//lastTime=millis();
 		//Pulses = 0;
 		if(smoothMode){
-			bool accel_triangle = ((pow(abs(sp), 2)/(accelerationInRPMPerSecond*60.0)) > abs(rot)) ? true : false;
+			//bool accel_triangle = ((pow(abs(sp), 2)/(accelerationInRPMPerSecond*60.0)) > abs(rot)) ? true : false;
+			bool accel_triangle = isAccelerationTriangle(sp, rot, accelerationInRPMPerSecond);
 			//Serial.println("Acceleration and deceleration space: " + String((pow(sp, 2)/(accelerationInRPMPerSecond*60.0) > rot)));
 			//Serial.println("rot: " + String(rot));
 			//Serial.println("Acceleration triangle: " + String(accel_triangle));
@@ -407,10 +408,10 @@ void DC_motor_controller::stop_both(int time /*= 0*/){
 
 void DC_motor_controller::accelerate(float sp, float accel){
 	unsigned long startTime = millis()/*, elapsedTimeSinseStart = 0*/;
-	//Serial.println("Acceleration started!");
+	//print("Acceleration started!");
 	accelerateProcess(1,1,1, true); // Resets time variable
 	while(accelerateProcess(sp, accel, startTime));
-	//Serial.println("Acceleration ended!");
+	//print("Acceleration ended!");
 }
 
 bool DC_motor_controller::accelerateProcess(float maxVelocity, float acceleration, unsigned long startTime, bool reset/* = false*/){
@@ -485,14 +486,16 @@ void DC_motor_controller::print (String text, bool new_line /* = true*/){
 	}
 }
 
+unsigned long DC_motor_controller::pulsePerRotation(){
+	return ppr*rr;
+}
+
 long DC_motor_controller::rotationsToPulses(float rot){
-	static uint32_t conversionConstant = ppr*rr;
-	return (rot*conversionConstant);
+	return (rot*pulsePerRotation());
 }
 
 float DC_motor_controller::pulsesToRotations(float pulses){
-	static uint32_t conversionConstant = ppr*rr;
-	return (pulses/(float)(conversionConstant));
+	return (pulses/(float)(pulsePerRotation()));
 }
 
 float DC_motor_controller::pulsesToRPM(long pulses, unsigned long deltaTime){
@@ -501,7 +504,10 @@ float DC_motor_controller::pulsesToRPM(long pulses, unsigned long deltaTime){
 		return 0;
 		//Serial.println("------------ Delta Time is zero!!!!!!! ---------------------");
 	}
-	static uint32_t conversionConstant = ppr*rr;
 	//Serial.println("------------ RPM is:" + String((float)pulses*60000.0/(conversionConstant*deltaTime)));
-	return (float)pulses*60000.0/(conversionConstant*deltaTime);
+	return (float)pulses*60000.0/(pulsePerRotation()*deltaTime);
+}
+
+bool DC_motor_controller::isAccelerationTriangle(float velocity, float rotations, float accelerationInRPMPerSecond){
+	return (pow(abs(velocity), 2)/(accelerationInRPMPerSecond*60.0)) > abs(rotations);
 }

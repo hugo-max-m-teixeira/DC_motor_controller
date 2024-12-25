@@ -54,6 +54,7 @@ class DC_motor_controller{
     int getPWM(); // Retorna o PWM aplicado aos motores
     unsigned int getRefreshTime();
     float getAcceleration();
+    bool isAccelerationTriangle(float velocity, float rotations, float accelerationInRPMPerSecond);
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
     bool anti_inertia = true;
@@ -83,7 +84,9 @@ class DC_motor_controller{
     bool smoothMode = true;
     uint8_t encoderPinA, encoderPinB;
     float ppr = 11, rr, rpm;
+    float I = 0;
     float kp = 1.2, ki = 1, kd = 0.15;	// Valores padrão para as constantes do PID;
+    float lastError;
     int pwm = 0;
     unsigned int accelerationInRPMPerSecond = 50;	// 50 RMP/s is the default value
     float pulses_error_coeficient = 1;
@@ -108,6 +111,7 @@ class DC_motor_controller{
     long rotationsToPulses(float rot);
     float pulsesToRotations(float pulses);
     float pulsesToRPM(long pulses, unsigned long deltaTime);
+    unsigned long pulsePerRotation();
     bool accelerateProcess(float maxVelocity, float acceleration, unsigned long startTime, bool reset = false);
     
     bool show_logs = false;
