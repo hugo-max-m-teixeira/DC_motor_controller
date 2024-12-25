@@ -32,7 +32,7 @@ class DC_motor_controller{
     // Actions:
     void run(int pwm);					// Apply a simple pwm on the motor
     void walk(float sp, float rot=0);	// Motor simple walk - For only one motor and it uses While
-    bool gyrate(float sp, float rot, unsigned long elapsedTimeSinseStart);	// Motor gyrate - For one or two motors and needs be into a while
+    bool gyrate(float sp, float rot, unsigned long startTime, bool reset = false);	// Motor gyrate - For one or two motors and needs be into a while
     void stop(unsigned int t=0);
     void stop_both(int time=0);
    	void accelerate(float sp, float accel);
@@ -53,6 +53,7 @@ class DC_motor_controller{
     bool canStop();
     int getPWM(); // Retorna o PWM aplicado aos motores
     unsigned int getRefreshTime();
+    float getAcceleration();
 
     volatile long int pulses[2] = {0, 0}; // pulses[0] - para o RPM, pulses[1]- rotação
     bool anti_inertia = true;
@@ -84,7 +85,7 @@ class DC_motor_controller{
     float ppr = 11, rr, rpm;
     float kp = 1.2, ki = 1, kd = 0.15;	// Valores padrão para as constantes do PID;
     int pwm = 0;
-    unsigned int accelerationInRPMPerSecond = 50;	// 50 RMP/s
+    unsigned int accelerationInRPMPerSecond = 50;	// 50 RMP/s is the default value
     float pulses_error_coeficient = 1;
     
     int maxI = 255;
@@ -92,7 +93,7 @@ class DC_motor_controller{
     int computeAll(float sp);
     uint8_t in1, in2, en;
     bool /*can_run = false*/ can_stop = false, can_accelerate = false;
-    long Pulses = 0;
+    //long Pulses = 0;
     
     bool is_counting = false;
     float total_rot = 0;
@@ -107,7 +108,7 @@ class DC_motor_controller{
     long rotationsToPulses(float rot);
     float pulsesToRotations(float pulses);
     float pulsesToRPM(long pulses, unsigned long deltaTime);
-    void gyrateThreadTask(float sp, float rot, unsigned long elapsedTimeSinseStart);
+    bool accelerateProcess(float maxVelocity, float acceleration, unsigned long startTime, bool reset = false);
     
     bool show_logs = false;
     void print(String text, bool new_line = true);	
