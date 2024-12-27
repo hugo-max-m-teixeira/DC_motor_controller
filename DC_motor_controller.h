@@ -11,6 +11,14 @@
 
 #include <Arduino.h>
 
+class Timing{
+public:
+	unsigned long lastTimeInMs;
+	unsigned long deltaTimeInMs(){
+		return millis() - lastTimeInMs;
+	}
+};
+
 class DC_motor_controller{
   public:
   	// Set_pins:
@@ -32,6 +40,8 @@ class DC_motor_controller{
     // Actions:
     void run(int pwm);					// Apply a simple pwm on the motor
     void walk(float sp, float rot=0);	// Motor simple walk - For only one motor and it uses While
+    
+    Timing gyrateTiming;
     bool gyrate(float sp, float rot, unsigned long startTime, bool reset = false);	// Motor gyrate - For one or two motors and needs be into a while
     void stop(unsigned int t=0);
     void stop_both(int time=0);
@@ -43,12 +53,13 @@ class DC_motor_controller{
    	
     // Others...
     void isr();
-    float computeRPM(long int *pulses_variable, unsigned long deltaTime);
+    float computeRPM(long deltaPulses, unsigned long deltaTime);
     float getRPM();
     void startCounting();	// Starts counting rotations number since now
     void stopCounting();	// Stops counting rotations number
     float getRotations();	// Returns the actual rotations cumulated number
     void reset();
+    void resetTimingVariables();
     //bool canRun();
     bool canStop();
     int getPWM(); // Retorna o PWM aplicado aos motores
@@ -61,20 +72,6 @@ class DC_motor_controller{
     float pulsesToRPMPIDConversionConstant = 0.75;
 
 //private:
-	// Timing control class (for threading):
-	class Thread {
-	public:
-		unsigned int refreshTime = 50;
-		void setTask(void (*_task)());
-		void thread();
-
-	private:
-		void (*userTask)();
-		unsigned int lastTime = 0;
-
-	};
-	
-	Thread _PIDAndRPMThread;
 	
 
     void applyIntegralLimit(float &I);
@@ -82,6 +79,8 @@ class DC_motor_controller{
     unsigned long lastTime = 0, deltaTime, refreshTime=50;  // Usado pelo PID
     unsigned long lastTime_accel = 0;// For acceleration control
     bool smoothMode = true;
+    
+    uint8_t in1, in2, en;
     uint8_t encoderPinA, encoderPinB;
     float ppr = 11, rr, rpm;
     float I = 0;
@@ -89,17 +88,21 @@ class DC_motor_controller{
     float lastError;
     int pwm = 0;
     unsigned int accelerationInRPMPerSecond = 50;	// 50 RMP/s is the default value
-    float pulses_error_coeficient = 1;
     
     int maxI = 255;
     int computePID(float input, float sp, unsigned long deltaTime, bool reset = false, bool inputInPulses = false);
-    int computeAll(float sp);
-    uint8_t in1, in2, en;
-    bool /*can_run = false*/ can_stop = false, can_accelerate = false;
-    //long Pulses = 0;
+   
     
-    bool is_counting = false;
-    float total_rot = 0;
+    Timing walkAtConstantVelocityTiming;
+    void walkAtConstantVelocity(float sp, bool reset = false);
+
+    long lastPulses;
+    bool canAccelerate = true, previousCanAccelerate = false;
+    
+    bool can_stop = false;
+    
+    bool isCountingRotations = false;
+    float elapsedRotations = 0;
     int direction = 1;
 
     float inertia_time_coeficient = 1.7;
@@ -112,6 +115,11 @@ class DC_motor_controller{
     float pulsesToRotations(float pulses);
     float pulsesToRPM(long pulses, unsigned long deltaTime);
     unsigned long pulsePerRotation();
+    
+    Timing accelerateTiming;
+    long accelerateStartPulsesValue;
+    float startingValueOfElapsedRotations;
+    float lastPWM = 0;
     bool accelerateProcess(float maxVelocity, float acceleration, unsigned long startTime, bool reset = false);
     
     bool show_logs = false;
