@@ -275,17 +275,22 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 		//unsigned long elapsedTimeSinseStart = refreshTime;
 
 		rot -= pulsesToRotations(pulses[1]);
-		
+
+		long remeaningPulsesError;
+
 		if(sp>0){
-			pulses[1] -= lastDesiredPulses; // pulses error from previous accelerate() is considered and charged in pulses[1]
+			remeaningPulsesError = pulses[1] - lastDesiredPulses;
 		} else {
-			pulses[1] += lastDesiredPulses;
+			remeaningPulsesError = pulses[1] + lastDesiredPulses;
 		}
-		
+
+		gyrate(0, 0, 0, true); // Resets time variable of gyrate
+
+		pulses[1] = remeaningPulsesError;
+				
 		//Serial.println("millis(): " + String(millis()));	
 		//Serial.println("Remeaning rotations to be done: " + String(rot));	
 			
-		gyrate(0, 0, 0, true); // Resets time variable of gyrate
 		while(gyrate(sp, rot, startTime));
 		
 		reset();
@@ -325,25 +330,23 @@ bool DC_motor_controller::gyrate(float sp, float rot, unsigned long startTime, b
 	//static unsigned long lastTime = millis();
 	unsigned long deltaTime;
 	long currentDesiredPulses;
-	
-	static long startPulsesValue = pulses[1];
-	static float startingValueOfElapsedRotations = elapsedRotations;
 
 	ifNegativeAllNegative(sp, rot);
 
 	if(reset){ // This means first call of gyrate (deltaT = 0)
 		gyrateTiming.lastTimeInMs = millis() - refreshTime;
-		startPulsesValue = pulses[1];
-		startingValueOfElapsedRotations = elapsedRotations;
+		//gyrateStartPulsesValue = pulses[1];
+		pulses[1] = 0;
+		gyrateStartingValueOfElapsedRotations = elapsedRotations;
 		//Serial.println("Gyrate reset!");
 		print("Gyrate reset! Refresh time: " + String(refreshTime));
-		return;
+		return false;
 	}
 
 	deltaTime = gyrateTiming.deltaTimeInMs();   // De acordo como tempo (para o PID)
 	
 	//Serial.println("Gyrate delta time: " + String(deltaTime));
-	print("Gyrate delta time: " + String(deltaTime));
+	//print("Gyrate delta time: " + String(deltaTime));
 	if(deltaTime >= refreshTime){ 
 		
 		print("Gyrate delta time (processed): " + String(deltaTime));
@@ -361,7 +364,7 @@ bool DC_motor_controller::gyrate(float sp, float rot, unsigned long startTime, b
 		//}
 		//Serial.println("Set point value: " + String(sp));
 		//Serial.println("Rotations to pulses value: " + String(rotationsToPulses(sp)));
-		//Serial.println("Real pulses value: " + String(pulses[1]) + "\t Desired pulses value: " + String(currentDesiredPulses)+ '\n');
+		Serial.println("Real pulses value: " + String(pulses[1]) + "\t Desired pulses value: " + String(currentDesiredPulses)+ '\n');
 		//print("Real pulses value: " + String(pulses[1]) + "\t Desired pulses value: " + String(currentDesiredPulses)+ '\n');
 		cli();	// Disables all external interruptions
 
@@ -372,7 +375,7 @@ bool DC_motor_controller::gyrate(float sp, float rot, unsigned long startTime, b
 		
 		//print("Motor PWM output: " + String(pwm));
 		if(isCountingRotations){
-			elapsedRotations = startingValueOfElapsedRotations + pulsesToRotations(pulses[1] - startPulsesValue);
+			elapsedRotations = gyrateStartingValueOfElapsedRotations + pulsesToRotations(pulses[1]);
 		}
 		gyrateTiming.lastTimeInMs = millis();
 		sei(); // Enables external interruptions

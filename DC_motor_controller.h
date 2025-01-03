@@ -42,7 +42,10 @@ class DC_motor_controller{
     void walk(float sp, float rot=0);	// Motor simple walk - For only one motor and it uses While
     
     Timing gyrateTiming;
+    long gyrateStartPulsesValue;
+    float gyrateStartingValueOfElapsedRotations;
     bool gyrate(float sp, float rot, unsigned long startTime, bool reset = false);	// Motor gyrate - For one or two motors and needs be into a while
+    
     void stop(unsigned int t=0);
     void stop_both(int time=0);
    	void accelerate(float sp, float accel);
