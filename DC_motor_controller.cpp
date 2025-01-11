@@ -276,13 +276,15 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 
 		rot -= pulsesToRotations(pulses[1]);
 
-		long remeaningPulsesError;
+		long remeaningPulsesError = 0;
 
 		if(sp>0){
 			remeaningPulsesError = pulses[1] - lastDesiredPulses;
 		} else {
 			remeaningPulsesError = pulses[1] + lastDesiredPulses;
 		}
+		
+		rot -= pulsesToRotations(-remeaningPulsesError);
 
 		gyrate(0, 0, 0, true); // Resets time variable of gyrate
 
@@ -290,6 +292,7 @@ void DC_motor_controller::walk(float sp, float rot/* = 0*/){
 				
 		//Serial.println("millis(): " + String(millis()));	
 		//Serial.println("Remeaning rotations to be done: " + String(rot));	
+		print("Remeaning rotations to be done: " + String(rot));	
 			
 		while(gyrate(sp, rot, startTime));
 		
@@ -364,7 +367,7 @@ bool DC_motor_controller::gyrate(float sp, float rot, unsigned long startTime, b
 		//}
 		//Serial.println("Set point value: " + String(sp));
 		//Serial.println("Rotations to pulses value: " + String(rotationsToPulses(sp)));
-		Serial.println("Real pulses value: " + String(pulses[1]) + "\t Desired pulses value: " + String(currentDesiredPulses)+ '\n');
+		//Serial.println("Real pulses value: " + String(pulses[1]) + "\t Desired pulses value: " + String(currentDesiredPulses)+ '\n');
 		//print("Real pulses value: " + String(pulses[1]) + "\t Desired pulses value: " + String(currentDesiredPulses)+ '\n');
 		cli();	// Disables all external interruptions
 
